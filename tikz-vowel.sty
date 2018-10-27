@@ -1,0 +1,2519 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% tikz-vowel.sty
+%% Copyright 2016-2017 by Christopher Weedall <chris.weedall@anu.edu.au>
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%   http://www.latex-project.org/lppl.txt
+% and version 1.3 or later is part of all distributions of LaTeX
+% version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status `author-maintained'.
+% 
+% The Current Maintainer of this work is Christopher Weedall.
+%
+% This work consists of the files tikz-vowel.dtx, tikz-vowel.ins, tikz-vowel.tex, tikz-vowel.pdf
+% and the derived file tikz-vowel.sty.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% based on TikZ implementation of vowel chart from:
+% 	http://tex.stackexchange.com/questions/156955/tikz-pgf-linguistics-vowel-chart
+% based on concepts in vowel.sty Copyright 2002 by Rei Fukui
+% based on concepts in pst-vowel.sty Copyright 2009 by Alan Munn
+%
+% This package creates a sagittal grid based on the IPA vowel grid.
+%
+% The grid is created within a tikz-picture environment.
+%
+% Coordinates for cardinal vowels are created which correspond to the 16 vowel nodes
+% which exist in vowel.sty.  There are two coordinates for each vowel.
+% The first coordinate is labeled with an ordinal numeral (e.g. 1, 2, 3, etc.) while 
+% the second coordinate is labeled with `v' prepended to the ordinal numeral (e.g. v1, v2, v3, etc.)
+%
+% Several new commands are created which mirror the concept of vowel.sty,
+% but have additional options available.  For example, instead of being limited to 
+% `left' and `right' for the label of a vowel, `above', `below' and the corners
+% `above left', `above right', etc. are allowed.  Another example is the introduction
+% of a `scale' optional argument.
+%
+% Similar to the pst-vowel.sty package, there are four methods that allow
+% diphthong lines and labels to be created.  One for diphthongs between cardinal vowels,
+% another from a cardinal vowel to a manual coordinate, another from a manual 
+% coordinate to a cardinal vowel, and the last between two manual coordinates.
+%
+% No code was taken directly from either vowel.sty or pst-vowel.sty.
+% However, the commands provided inspiration for this package to 
+% accomplish the same/similar with little-to-no learning curve.
+%
+% This package uses coordinate, node, and draw commands from the
+% tikz package .  TikZ is used to essentially draw everything.
+%
+% Version 1.0 2017/03/18
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\RequirePackage{expl3}
+\ProvidesExplPackage
+	% Package name
+	{tikz-vowel}
+	% Release date
+	{2016/07/28}
+	% Release version          
+	{1.0}
+	% Description
+	{tikz-vowel package provides an environment allowing a (stylized) sagittal view for vowel plotting.}
+%
+%DEPRECATED,REPLACED WITH LINE BELOW%\RequirePackage{l3regex}%
+\RequirePackage{expl3}
+\RequirePackage{xstring}%
+\RequirePackage{xparse}%
+%
+\RequirePackage{tikz}%
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%%%%FIX - PATCH TIKZ TO FOLLOW LATEX2E WITHIN THE LATEX3 ENVIRONMENT
+\RequirePackage{etoolbox}
+\ExplSyntaxOff
+\patchcmd
+	{\pgfutil@InputIfFileExists}
+	{\input #1}
+	{%
+	\@pushfilename
+	\expandafter\expandafter\expandafter\input #1 %
+	\@popfilename
+	}
+	{}{}
+\usetikzlibrary{arrows.meta,backgrounds,calc,fit,intersections,positioning,shapes.misc,shapes.geometric}%
+%
+\ExplSyntaxOn
+%
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%
+% Generate a nfT variant for \regex_match:nnT
+\cs_generate_variant:Nn \regex_match:nnT {nfT}
+%
+% Generate a nVTF variant for \regex_match:nnTF
+\cs_generate_variant:Nn \regex_match:nnTF {nVTF}
+%
+% Generate a NT variant for \tl_if_blank:nT
+\cs_generate_variant:Nn \tl_if_blank:nT {NT}
+%
+%----------------------------------------------------------------------
+%	Define the x and y coordinates of vowel nodes v1 - v16
+%		-see `Create vowel coordinates (node) v1 - v16 using x and y coordinates' for creation of TikZ coordinates/nodes
+%----------------------------------------------------------------------
+%Vowel i	-	Node v1 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV1_tl } 
+\tl_gset:cn { g_tikzvowel_xV1_tl } { 0 }
+\tl_new:c { g_tikzvowel_yV1_tl }
+\tl_gset:cn { g_tikzvowel_yV1_tl } { 3 }
+%Vowel e	-	Node v2 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV2_tl }
+\tl_gset:cn { g_tikzvowel_xV2_tl } { 0.66666 }
+\tl_new:c { g_tikzvowel_yV2_tl }
+\tl_gset:cn { g_tikzvowel_yV2_tl } { 2 }
+%Vowel ɛ	-	Node v3 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV3_tl }
+\tl_gset:cn { g_tikzvowel_xV3_tl } { 1.33333 }
+\tl_new:c { g_tikzvowel_yV3_tl }
+\tl_gset:cn { g_tikzvowel_yV3_tl } { 1 }
+%Vowel a	-	Node v4 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV4_tl }
+\tl_gset:cn { g_tikzvowel_xV4_tl } { 2 }
+\tl_new:c { g_tikzvowel_yV4_tl }
+\tl_gset:cn { g_tikzvowel_yV4_tl } { 0 }
+%Vowel ɑ	-	Node v5 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV5_tl }
+\tl_gset:cn { g_tikzvowel_xV5_tl } { 4 }
+\tl_new:c { g_tikzvowel_yV5_tl }
+\tl_gset:cn { g_tikzvowel_yV5_tl } { 0 }
+%Vowel ɔ	-	Node v6 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV6_tl }
+\tl_gset:cn { g_tikzvowel_xV6_tl } { 4 }
+\tl_new:c { g_tikzvowel_yV6_tl }
+\tl_gset:cn { g_tikzvowel_yV6_tl } { 1 }
+%Vowel o	-	Node v7 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV7_tl }
+\tl_gset:cn { g_tikzvowel_xV7_tl } { 4 }
+\tl_new:c { g_tikzvowel_yV7_tl }
+\tl_gset:cn { g_tikzvowel_yV7_tl } { 2 }
+%Vowel u	-	Node v8 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV8_tl }
+\tl_gset:cn { g_tikzvowel_xV8_tl } { 4 }
+\tl_new:c { g_tikzvowel_yV8_tl }
+\tl_gset:cn { g_tikzvowel_yV8_tl } { 3 }
+%Vowel ɨ	-	Node v9 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV9_tl }
+\tl_gset:cn { g_tikzvowel_xV9_tl } { 2 }
+\tl_new:c { g_tikzvowel_yV9_tl }
+\tl_gset:cn { g_tikzvowel_yV9_tl } { 3 }
+%Vowel ɘ	-	Node v10 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV10_tl }
+\tl_gset:cn { g_tikzvowel_xV10_tl } { 2.33333 }
+\tl_new:c { g_tikzvowel_yV10_tl }
+\tl_gset:cn { g_tikzvowel_yV10_tl } { 2 }
+%Vowel ə	-	Node v11 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV11_tl }
+\tl_gset:cn { g_tikzvowel_xV11_tl } { 2.5 }
+\tl_new:c { g_tikzvowel_yV11_tl }
+\tl_gset:cn { g_tikzvowel_yV11_tl } { 1.5 }
+%Vowel ɜ	-	Node v12 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV12_tl }
+\tl_gset:cn { g_tikzvowel_xV12_tl } { 2.66666 }
+\tl_new:c { g_tikzvowel_yV12_tl }
+\tl_gset:cn { g_tikzvowel_yV12_tl } { 1 }
+%Vowel ɪ	-	Node v13 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV13_tl }
+\tl_gset:cn { g_tikzvowel_xV13_tl } { 1.2 }
+\tl_new:c { g_tikzvowel_yV13_tl }
+\tl_gset:cn { g_tikzvowel_yV13_tl } { 2.5 }
+%Vowel ʊ	-	Node v14 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV14_tl }
+\tl_gset:cn { g_tikzvowel_xV14_tl } { 3.3 }
+\tl_new:c { g_tikzvowel_yV14_tl }
+\tl_gset:cn { g_tikzvowel_yV14_tl } { 2.5 }
+%Vowel ɐ	-	Node v15 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV15_tl }
+\tl_gset:cn { g_tikzvowel_xV15_tl } { 2.8 }
+\tl_new:c { g_tikzvowel_yV15_tl }
+\tl_gset:cn { g_tikzvowel_yV15_tl } { 0.6 }
+%Vowel æ	-	Node v16 (x + y coordinates)
+\tl_new:c { g_tikzvowel_xV16_tl }
+\tl_gset:cn { g_tikzvowel_xV16_tl } { 1.66666 }
+\tl_new:c { g_tikzvowel_yV16_tl }
+\tl_gset:cn { g_tikzvowel_yV16_tl } { 0.5 }
+%
+%
+% Create a temporary token list to store and modify the value of a regex match (plus changes)
+\tl_if_exist:NF \l_tikzvowel_update_tl
+	{ \tl_new:N \l_tikzvowel_update_tl }
+\tl_set:Nn \l_tikzvowel_update_tl { }
+%
+% Create a temporary token list to store and modify the value of a regex match (plus changes)
+\tl_if_exist:NF \l_tikzvowel_temp_tl
+	{ \tl_new:N \l_tikzvowel_temp_tl }
+\tl_set:Nn \l_tikzvowel_temp_tl { }
+%
+% Create a temporary token list to store X,Y coordinates and remove commas
+\tl_if_exist:NF \l_tikzvowel_temp_XY_remove_comma_tl
+	{ \tl_new:N \l_tikzvowel_temp_XY_remove_comma_tl }
+\tl_set:Nn \l_tikzvowel_temp_XY_remove_comma_tl { }
+%
+% Create a new token list to store the node commands
+\tl_if_exist:NF \g_tikzvowel_nodes_tl
+	{ \tl_new:N \g_tikzvowel_nodes_tl }
+\tl_gset:Nx \g_tikzvowel_nodes_tl { }
+%
+% Create a new token list to store the draw commands
+\tl_if_exist:NF \g_tikzvowel_draw_tl
+	{ \tl_new:N \g_tikzvowel_draw_tl }
+\tl_gset:Nx \g_tikzvowel_draw_tl { }
+%
+% Create a new token list to store the fixed vowel node label/name
+\tl_if_exist:NF \l_tikzvowel_stripped_label_tl
+	{ \tl_new:N \l_tikzvowel_stripped_label_tl }
+\tl_set:Nx \l_tikzvowel_stripped_label_tl { }
+%
+%Create a counter, set to 0, for creating coordinates
+\int_if_exist:NF \l_tikzvowel_counter_int
+	{ \int_new:N \l_tikzvowel_counter_int }
+\int_zero:N \l_tikzvowel_counter_int
+%
+% Create a new int variable to store the cardinal vowel number
+\int_if_exist:NF \l_tikzvowel_cardinal_vowel_number_int
+	{ \int_new:N \l_tikzvowel_cardinal_vowel_number_int }
+% Set default cardinal vowel number to 0 (this is invalid, and should be changed within a function)
+\int_zero:N \l_tikzvowel_cardinal_vowel_number_int
+%
+% Create a sequence (i.e. list of tokens) to aid in separating X and Y
+\seq_if_exist:NF \l_tikzvowel_coordinates_seq
+	{ \seq_new:N \l_tikzvowel_coordinates_seq }
+%
+% Create a sequence (i.e. list of tokens) to aid in separating starting X and Y
+\seq_if_exist:NF \l_tikzvowel_starting_coordinates_seq
+	{ \seq_new:N \l_tikzvowel_starting_coordinates_seq }
+% Create a sequence (i.e. list of tokens) to aid in separating ending X and Y
+\seq_if_exist:NF \l_tikzvowel_ending_coordinates_seq
+	{ \seq_new:N \l_tikzvowel_ending_coordinates_seq }
+%
+%
+%----------------------------------------------------------------------
+%	Create vowel coordinates (node) v1 - v16 using x and y coordinates
+%		-see `Define the x and y coordinates of vowel nodes v1 - v16' for details
+%----------------------------------------------------------------------
+%\DeclareDocumentCommand{\cs_tikzvowel_populate_cardinal_vowel_coordinates}{}
+\cs_new:Nn \cs_tikzvowel_populate_cardinal_vowel_coordinates:
+{%
+	% Re/set counter to 0, for creating coordinates
+	\int_zero:N \l_tikzvowel_counter_int
+	
+	%Create coordinates (nodes) with a label such as v1, v2, ... v16 and 1, 2, ... 16
+	\int_while_do:nn { \l_tikzvowel_counter_int < 16 }
+	{%
+		%Increment counter by 1 first
+		\int_incr:N \l_tikzvowel_counter_int
+
+		%Create vNUM coordinate
+		\coordinate (v\int_use:N \l_tikzvowel_counter_int ) 
+		at ( \tl_use:c { g_tikzvowel_xV\int_use:N \l_tikzvowel_counter_int _tl } , 
+			\tl_use:c { g_tikzvowel_yV\int_use:N \l_tikzvowel_counter_int _tl });%
+		%Create NUM coordinate
+		\coordinate ( \int_use:N \l_tikzvowel_counter_int ) 
+		at ( \tl_use:c { g_tikzvowel_xV\int_use:N \l_tikzvowel_counter_int _tl } , 
+			\tl_use:c { g_tikzvowel_yV\int_use:N \l_tikzvowel_counter_int _tl });%
+	}%
+}%
+%----------------------------------------------------------------------
+%	Create cardinal vowel node with a label (or name)
+%		-argument #1 (optional) is the location of the label (if unspecified, `center' is default)
+%			-see TikZ for details and all available values
+%			-available values (typical):
+%				`center' [default]
+%				`left'
+%				`right'
+%				`above'
+%				`below'
+%				`above left'
+%				`above right'
+%				`below left'
+%				`below right'
+%		-argument #2 (required) is the vowel node label/name
+%		-argument #3 (required) is the vowel node location
+%			-see `Define the x and y coordinates of vowel nodes v1 - v16' for details
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\cardinalvowel}{ O{center} m m }
+{%
+	% Error checking for #2 (vowel label/name) - is empty?
+	\tl_if_empty:nT {#2} 
+		{ \PackageError{tikz-vowel:\cardinalvowel}{Label/name~for~vowel~node~is~undefined}{} }
+	% Error checking for #3 (vowel node location) - is empty?
+	\tl_if_empty:nT {#3}
+		{ \PackageError{tikz-vowel:\cardinalvowel}{Vowel~node~location~is~undefined}{} }
+
+	% Error checking for #2 (vowel label/name) - is blank?
+	\tl_if_blank:nT {#2} 
+		{ \PackageError{tikz-vowel:\cardinalvowel}{Label/name~for~vowel~node~is~undefined}{} }
+	% Error checking for #3 (vowel node location) - is blank?
+	\tl_if_blank:nT {#3}
+		{ \PackageError{tikz-vowel:\cardinalvowel}{Vowel~node~location~is~undefined}{} }
+	
+	% Error checking for #3 (vowel node location) - contains unwanted letters/numbers/characters?
+	\regex_match:nnT { [^v0-9] } { #3 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\cardinalvowel}
+			{Vowel~node~'#3'~is~invalid.~
+			Must~be~1-16~OR~v1-v16}
+			{}%
+	}%
+
+	% Re/set default cardinal vowel number to 0 (this is invalid, but is changed immediately)
+	\int_zero:N \l_tikzvowel_cardinal_vowel_number_int
+	% Check if #3 (vowel node location) contains 'v'
+	\regex_match:nnTF { [v] } { \tl_head:n {#3} } 
+	{%
+		%If true - strip v to get cardinal vowel number
+		\int_set:Nn \l_tikzvowel_cardinal_vowel_number_int { \tl_tail:n {#3} }
+	}
+	{%
+		%If false - there is no v, meaning already cardiinal vowel number
+		\int_set:Nn \l_tikzvowel_cardinal_vowel_number_int { #3 }
+	}%
+
+	% Error check - is the numerical value of #3 between 1 and 16 (inclusive)?
+	% first, check if vowel is less than 1
+	\int_compare:nNnTF { \l_tikzvowel_cardinal_vowel_number_int } < { 1 }
+	{%
+		% Error! - cardinal vowel number is less than 1
+		\PackageError{tikz-vowel:\cardinalvowel}
+			{Vowel~'#2'~at~node~'#3'~(i.e.~less~than~1).~
+			Must~be~1-16~OR~v1-v16}
+			{}
+	}
+	{%
+		% If vowel is not less than 1, check if greater than 16
+		\int_compare:nNnT { \l_tikzvowel_cardinal_vowel_number_int } > { 16 }
+		{%
+			% Error! - the vowel node number is greater than 16
+			\PackageError{tikz-vowel:\cardinalvowel}
+				{Vowel~'#2'~at~node~'#3'~(i.e.~greater~than~16).~
+				Must~be~1-16~OR~v1-v16}
+				{}%
+		}%
+	}%
+
+	% Set the token list to the string value (NOT actual macros/commands) of the label/name
+	\tl_set:Nx \l_tikzvowel_stripped_label_tl { \tl_to_str:n {#2} }
+
+	% Replace anything matching a command ( \ NAME { ) or a closing curly bracket with nothing
+	% (i.e. delete macro/command-related stuff - it's not allowed for the tikz node name
+	% ***WARNING***
+	% This may not cover all commands... it may need to be updated or added to eventually
+	% to account for additional complicated situations
+	\regex_replace_all:nnN { [\\]([^\\]*?)[\{]|[\}] } {} \l_tikzvowel_stripped_label_tl
+	\regex_replace_all:nnN { [\\]([^\\]*?)\s+ } {} \l_tikzvowel_stripped_label_tl
+
+	% Check if vowel label/name has no location value specified
+	\IfNoValueTF {#1}
+	{%
+		% Vowel label/name has no location value specified
+		\tl_gput_right:Nx \g_tikzvowel_nodes_tl
+			{%
+				\exp_not:N \node ( \exp_not:V \l_tikzvowel_stripped_label_tl ) 
+					[vowelLetter]
+					at ( \tl_use:c { g_tikzvowel_xV\int_use:N \l_tikzvowel_cardinal_vowel_number_int _tl } , 
+						\tl_use:c { g_tikzvowel_yV\int_use:N \l_tikzvowel_cardinal_vowel_number_int _tl } ) 
+				{\exp_not:n {#2}};%
+			}%
+	}
+	{%
+		% Vowel label/name has location value specified
+		% check if location value is 'center'
+		\tl_if_eq:nnTF { #1 } { center }
+		{%
+			% Location value is 'center'
+			% so, NO dot
+			% AND place label/name at the center
+			\tl_gput_right:Nx \g_tikzvowel_nodes_tl
+			{%
+				\exp_not:N \node ( \exp_not:V \l_tikzvowel_stripped_label_tl )
+					[vowelLetter]
+					at ( \tl_use:c { g_tikzvowel_xV\int_use:N \l_tikzvowel_cardinal_vowel_number_int _tl } , 
+						\tl_use:c { g_tikzvowel_yV\int_use:N \l_tikzvowel_cardinal_vowel_number_int _tl } ) 
+					{\exp_not:n {#2}};%\exp_not:n {#2
+			}%
+		}
+		{%
+			% Location value is not 'center'
+			% so, need a dot at the node
+			% AND need to place the label/name at specified location
+			\tl_gput_right:Nx \g_tikzvowel_nodes_tl
+			{%
+				\exp_not:N \node ( \exp_not:V \l_tikzvowel_stripped_label_tl )
+					[vowelDot,
+					label={[vowelLabel,
+							#1=of~\exp_not:V \l_tikzvowel_stripped_label_tl,
+							anchor=mid]\exp_not:n {#2}}]
+					at ( \tl_use:c { g_tikzvowel_xV\int_use:N \l_tikzvowel_cardinal_vowel_number_int _tl } , 
+						\tl_use:c { g_tikzvowel_yV\int_use:N \l_tikzvowel_cardinal_vowel_number_int _tl } ) 
+					{};%
+			}%
+		}%
+	}%
+}%
+%----------------------------------------------------------------------
+%	Create (custom) vowel node at X, Y coordinates with a label (or name)
+%		-argument #1 (optional) is the location of the label (if unspecified, `center' is default)
+%			-see TikZ for details and all available values
+%			-available values (typical):
+%				`center' [default]
+%				`left'
+%				`right'
+%				`above'
+%				`below'
+%				`above left'
+%				`above right'
+%				`below left'
+%				`below right'
+%		-argument #2 (required) is the vowel node label/name
+%		-argument #3 (required) is the vowel node location defined by (X, Y) or X,Y
+%			-notation should be `x,y' (spaces are irrelevant)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\xyvowel}{ O{center} m D(){} }
+{%
+	% Error checking for #3 (vowel node location) - is empty?
+	\tl_if_empty:nT {#3}
+		{ \PackageError{tikz-vowel:\xyvowel}{Vowel~node~location~is~undefined}{} }
+
+	% Error checking for #3 (vowel node location) - is blank?
+	\tl_if_blank:nT {#3}
+		{ \PackageError{tikz-vowel:\xyvowel}{Vowel~node~location~is~undefined}{} }
+	
+	% Error checking for #3 (vowel node location) - 
+	% Contains unwanted letters/numbers/characters?
+	\regex_match:nnT { [^0-9\-.,()] } { #3 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\xyvowel}
+			{Vowel~node~'#3'~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}%
+	}%
+		
+	% Split the values for X and Y, based on a comma
+	\regex_split:nnNF { , } { #3 } \l_tikzvowel_coordinates_seq
+		{%
+			% No , character was found - throw error.
+			\PackageError{tikz-vowel:\xyvowel}
+				{Vowel~'#2'~has~invalid~location~'#3'.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+		}%
+ 	
+ 	% Error check - 
+	% Check if less than 1 element in the sequence (this should never happen).
+	\int_compare:nNnTF { \seq_count:N \l_tikzvowel_coordinates_seq } < { 1 }
+	{%
+ 		% If less than 1, something serious occurred - throw error.
+ 		\PackageError{tikz-vowel:\xyvowel}
+			{Vowel~'#2'~has~invalid~location~'#3'.~
+			Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}%
+ 	}
+ 	{%
+ 		% Error check -
+ 		% Check if greater than 2 elements in the sequence
+ 		\int_compare:nNnTF { \seq_count:N \l_tikzvowel_coordinates_seq } > { 2 }
+ 		{%
+ 			% If greater than 2, user typed something wrong - throw error.
+ 			\PackageError{tikz-vowel:\xyvowel}
+				{Vowel~'#2'~has~invalid~location~'#3'.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+ 		}%
+ 	}%
+	
+	% Call \anyvowel command.
+	\anyvowel 	[#1]
+				{#2}
+				{\seq_item:Nn \l_tikzvowel_coordinates_seq {1}}
+				{\seq_item:Nn \l_tikzvowel_coordinates_seq {2}}%
+}%
+%----------------------------------------------------------------------
+%	Create (custom) vowel node at X, Y coordinates with a label (or name)
+%		-argument #1 (optional) is the location of the label (if unspecified, `center' is default)
+%			-see TikZ for details and all available values
+%			-available values (typical):
+%				`center' [default]
+%				`left'
+%				`right'
+%				`above'
+%				`below'
+%				`above left'
+%				`above right'
+%				`below left'
+%				`below right'
+%		-argument #2 (required) is the vowel node label/name
+%		-argument #3 (required) is the vowel node X coordinate location
+%		-argument #4 (required) is the vowel node Y coordinate location
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\anyvowel}{ O{center} m m m }
+{%
+	% Error checking for #2 (vowel label/name) - is empty?
+	\tl_if_empty:nT {#2} 
+		{ \PackageError{tikz-vowel:\anyvowel}{Label/name~for~vowel~node~is~undefined}{} }
+	% Error checking for #3 (vowel node X coordinate) - is empty?
+	\tl_if_empty:nT {#3}
+		{ \PackageError{tikz-vowel:\anyvowel}{Vowel~x-axis~value~is~undefined}{} }
+	% Error checking for #4 (vowel node Y coordinate) - is empty?
+	\tl_if_empty:nT {#4}
+		{ \PackageError{tikz-vowel:\anyvowel}{Vowel~y-axis~value~is~undefined}{} }
+
+	% Error checking for #2 (vowel label/name) - is blank?
+	\tl_if_blank:nT {#2} 
+		{ \PackageError{tikz-vowel:\anyvowel}{Label/name~for~vowel~node~is~undefined}{} }
+	% Error checking for #3 (vowel node X coordinate) - is blank?
+	\tl_if_blank:nT {#3}
+		{ \PackageError{tikz-vowel:\anyvowel}{Vowel~x-axis~value~is~undefined}{} }
+	% Error checking for #4 (vowel node X coordinate) - is blank?
+	\tl_if_blank:nT {#4}
+		{ \PackageError{tikz-vowel:\anyvowel}{Vowel~y-axis~value~is~undefined}{} }
+	
+	% Error checking for #3 (vowel x-axis value) - contains unwanted letters/numbers/characters?
+	\regex_match:nfT {[^0-9\-\.]} { #3 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\anyvowel}
+			{Vowel~x-axis~value~'#3'~is~invalid.~
+			Must~be~an~integer~or~decimal}
+			{}%
+	}%
+	
+	% Error checking for #4 (vowel y-axis value) - contains unwanted letters/numbers/characters?
+	\regex_match:nfT {[^0-9\-\.]} { #4 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\anyvowel}
+			{Vowel~x-axis~value~'#4'~is~invalid.~
+			Must~be~an~integer~or~decimal}
+			{}%
+	}%
+	
+	% Warning check - 
+	% Is the vowel X-axis coordinate is less than 0 (vowel chart is between 0 and 4 width)?
+	\fp_compare:nNnTF { #3 } < { 0 }
+	{%
+		% X-axis coordinate is less than 0 - throw warning
+		\PackageWarning{tikz-vowel:\anyvowel}
+			{Vowel~'#2'~at~X~value~'#3'~(i.e.~less~than~0).~
+			The~X-axis~for~the~vowel~chart~starts~at~0~(left~side)~
+			and~goes~to~4~(right~side).~
+			You~can~go~outside~this,~but~your~vowel~placement~may~be~unexpected.}
+			{}%
+	}
+	{%
+		% Warning check - 
+		% Is the vowel X-axis coordinate is greater than 4 (vowel chart is between 0 and 4 width)?
+		\fp_compare:nNnT { #3 } > { 4 }
+		{%
+			% X-axis coordinate is greater than 4 - throw warning
+			\PackageWarning{tikz-vowel:\anyvowel}
+				{Vowel~'#2'~at~X~value~'#3'~(i.e.~greater~than~4).~
+				The~X-axis~for~the~vowel~chart~starts~at~0~(left~side)~
+				and~goes~to~4~(right~side).~
+				You~can~go~outside~this,~but~your~vowel~placement~may~be~unexpected.}
+				{}%
+		}%
+	}%
+	
+	% Warning check - 
+	% Is the vowel Y-axis coordinate is less than 0 (vowel chart is between 0 and 3 height)?
+	\fp_compare:nNnTF { #4 } < { 0 }
+	{%
+		% Y-axis coordinate is less than 0 - throw warning
+		\PackageWarning{tikz-vowel:\anyvowel}
+			{Vowel~'#2'~at~Y~value~'#4'~(i.e.~less~than~0).~
+			The~Y-axis~for~the~vowel~chart~starts~at~0~(bottom~side)~
+			and~goes~to~3~(top~side).~
+			You~can~go~outside~this,~but~your~vowel~placement~may~be~unexpected.}
+			{}%
+	}
+	{%
+		% Warning check - 
+		% Is the vowel X-axis coordinate is greater than 3 (vowel chart is between 0 and 3 height)?
+		\fp_compare:nNnT { #4 } > { 3 }
+		{%
+			% Y-axis coordinate is greater than 3 - throw warning
+			\PackageWarning{tikz-vowel:\anyvowel}
+				{Vowel~'#2'~at~Y~value~'#4'~(i.e.~greater~than~3).~
+				The~Y-axis~for~the~vowel~chart~starts~at~0~(bottom~side)~
+				and~goes~to~3~(top~side).~
+				You~can~go~outside~this,~but~your~vowel~placement~may~be~unexpected.}
+				{}%
+		}%
+	}%
+	
+	% Set the token list to the string value (NOT actual macros/commands) of the label/name
+	\tl_set:Nx \l_tikzvowel_stripped_label_tl { \tl_to_str:n {#2} }
+
+	% Replace anything matching a command ( \ NAME { ) or a closing curly bracket with nothing
+	% (i.e. delete macro/command-related stuff - it's not allowed for the tikz node name
+	% ***WARNING***
+	% This may not cover all commands... it may need to be updated or added to eventually
+	% to account for additional complicated situations
+	\regex_replace_all:nnN { [\\]([^\\]*?)[\{]|[\}] } {} \l_tikzvowel_stripped_label_tl
+	\regex_replace_all:nnN { [\\]([^\\]*?)\s+ } {} \l_tikzvowel_stripped_label_tl
+
+	% Check if vowel label/name has no location value specified
+	\IfNoValueTF {#1}
+	{%
+		% Vowel label/name has no location value specified
+		\tl_gput_right:Nx \g_tikzvowel_nodes_tl
+			{%
+				\exp_not:N \node ( \exp_not:V \l_tikzvowel_stripped_label_tl ) 
+					[vowelLetter]
+					at ( #3 , #4 ) 
+					{\exp_not:n {#2}};%
+			}%
+	}
+	{%
+		% Vowel label/name has location value specified
+		% check if location value is 'center'
+		\tl_if_eq:nnTF { #1 } { center }
+		{%
+			% Location value is 'center'
+			% so, NO dot
+			% AND place label/name at the center
+			\tl_gput_right:Nx \g_tikzvowel_nodes_tl
+			{%
+				\exp_not:N \node ( \exp_not:V \l_tikzvowel_stripped_label_tl ) 
+					[vowelLetter]
+					at ( #3 , #4 ) 
+					{\exp_not:n {#2}};%
+			}%
+		}
+		{%
+			% Location value is not 'center'
+			% so, need a dot at the node
+			% AND need to place the label/name at specified location
+			\tl_gput_right:Nx \g_tikzvowel_nodes_tl
+				{%
+					\exp_not:N \node ( \exp_not:V \l_tikzvowel_stripped_label_tl )
+						[vowelDot,
+						label={[vowelLabel,
+								#1=of~\exp_not:V \l_tikzvowel_stripped_label_tl,
+								anchor=mid]\exp_not:n {#2}}]
+					at ( #3 , #4 ) 
+					{};%
+				}%
+		}%
+	}%
+}%
+%----------------------------------------------------------------------
+%	Diphthong between two cardinal vowels
+%		-argument #1 (optional) is the bend of the line (left or right)
+%		-argument #2 (required) is the starting point (coordinate/node) for the line
+%		-argument #3 (optional) is the degree of bend in the line (0 = straight line)
+%		-argument #4 (required) is the ending point (coordinate/node) for the line
+%		-argument #5 (optional) is the label for the diphthong
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\cardinaldiphthong}{ O{left} m O{15} m O{} }
+{%
+	% Error checking for #2 (cardinal vowel at diphthong starting point) - is empty?
+	\tl_if_empty:nT {#2} 
+		{ \PackageError{tikz-vowel:\cardinaldiphthong}
+			{Cardinal~vowel~at~diphthong~starting~point~is~undefined}{} }
+	% Error checking for #4 (cardinal vowel at diphthong ending point) - is empty?
+	\tl_if_empty:nT {#4}
+		{ \PackageError{tikz-vowel:\cardinaldiphthong}
+			{Cardinal~vowel~at~diphthong~ending~point~is~undefined}{} }
+
+	% Error checking for #2 (cardinal vowel at diphthong starting point) - is blank?
+	\tl_if_blank:nT {#2} 
+		{ \PackageError{tikz-vowel:\cardinaldiphthong}
+			{Cardinal~vowel~at~diphthong~starting~point~is~undefined}{} }
+	% Error checking for #4 (cardinal vowel at diphthong ending point) - is blank?
+	\tl_if_blank:nT {#4}
+		{ \PackageError{tikz-vowel:\cardinaldiphthong}
+			{Cardinal~vowel~at~diphthong~ending~point~is~undefined}{} }
+	
+	%------------------------------------------------------------------------------------------------
+	% Draw a line from cardinal vowel #2 to cardinal vowel #4
+	% - put label #5 at the center point of the line
+	
+	% If there is no label specified (or it's blank), then draw no label at the center.
+	\tl_if_blank:nTF {#5}
+	{%
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				%\exp_not:N \node ( \exp_not:V \l_tikzvowel_stripped_label_tl )
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#3, 
+									name~path=#2to#4]
+									(#2) % Cardinal vowel (start)
+								to
+									(#4);% Cardinal vowel (end)
+			}%
+	}
+	{% Otherwise, label is specified.  Print it at center point of line.
+		% Set the token list to the string value (NOT actual macros/commands) of the label/name
+		\tl_set:Nx \l_tikzvowel_stripped_label_tl { \tl_to_str:n {#5} }
+
+		% Replace anything matching a command ( \ NAME { ) or a closing curly bracket with nothing
+		% (i.e. delete macro/command-related stuff - it's not allowed for the tikz node name
+		% ***WARNING***
+		% This may not cover all commands... it may need to be updated or added to eventually
+		% to account for additional complicated situations
+		\regex_replace_all:nnN { [\\]([^\\]*?)[\{]|[\}] } {} \l_tikzvowel_stripped_label_tl
+		\regex_replace_all:nnN { [\\]([^\\]*?)\s+ } {} \l_tikzvowel_stripped_label_tl
+		
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#3,
+									name~path=\exp_not:V \l_tikzvowel_stripped_label_tl]
+									(#2) % Cardinal vowel (start)
+								to~
+									node [diphthongLabel] {\exp_not:n {#5}}
+									(#4);% Cardinal vowel (end)
+			}%
+	}%
+}%
+%----------------------------------------------------------------------
+%	Diphthong from cardinal vowel to specified x,y point
+%		-argument #1 (optional) is the bend of the line (left or right)
+%		-argument #2 (required) is the starting point (coordinate/node) for the line
+%		-argument #3 (optional) is the degree of bend in the line (0 = straight line)
+%		-argument #4 (required) is the ending (X,Y) point (coordinate/node) for the line
+%		-argument #5 (optional) is the label for the diphthong
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\cardinaltoxydiphthong}{ O{left} m O{15} D(){} O{}}
+{%
+	% Error checking for #4 (vowel node X,Y location) - is empty?
+	\tl_if_empty:nT {#4}
+		{ \PackageError{tikz-vowel:\cardinaltoxydiphthong}{Vowel~node~location~is~undefined}{} }
+
+	% Error checking for #4 (vowel node X,Y location) - is blank?
+	\tl_if_blank:nT {#4}
+		{ \PackageError{tikz-vowel:\cardinaltoxydiphthong}{Vowel~node~location~is~undefined}{} }
+	
+	% Error checking for #3 (vowel node location) - 
+	% Contains unwanted letters/numbers/characters?
+	\regex_match:nnT { [^0-9\-.,\s] } { #4 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\cardinaltoxydiphthong}
+			{Diphthong~node~ending~at~(#4)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}%
+	}%
+		
+	% Split the values for X and Y, based on a comma
+	\regex_split:nnNF { , } { #4 } \l_tikzvowel_coordinates_seq
+		{%
+			% No , character was found - throw error.
+			\PackageError{tikz-vowel:\cardinaltoxydiphthong}
+				{Diphthong~node~ending~at~(#4)~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+		}%
+ 	
+ 	% Error check - 
+	% Check if less than 1 element in the sequence (this should never happen).
+	\int_compare:nNnTF { \seq_count:N \l_tikzvowel_coordinates_seq } < { 1 }
+	{%
+ 		% If less than 1, something serious occurred - throw error.
+ 		\PackageError{tikz-vowel:\cardinaltoxydiphthong}
+			{Diphthong~node~ending~at~(#4)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}%
+ 	}
+ 	{%
+ 		% Error check -
+ 		% Check if greater than 2 elements in the sequence
+ 		\int_compare:nNnTF { \seq_count:N \l_tikzvowel_coordinates_seq } > { 2 }
+ 		{%
+ 			% If greater than 2, user typed something wrong - throw error.
+ 			\PackageError{tikz-vowel:\cardinaltoxydiphthong}
+				{Diphthong~node~ending~at~'#5'~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+ 		}%
+ 	}%
+
+	% Call \cardinaltoanydiphthong with the X, Y location specified
+	\cardinaltoanydiphthong	[#1]
+							{#2}
+							[#3]
+							{\seq_item:Nn \l_tikzvowel_coordinates_seq {1}}
+							{\seq_item:Nn \l_tikzvowel_coordinates_seq {2}}
+							[#5]
+}%
+%----------------------------------------------------------------------
+%	Diphthong from cardinal vowel to specified x,y point
+%		-argument #1 (optional) is the bend of the line (left or right)
+%		-argument #2 (required) is the starting point (coordinate/node) for the line
+%		-argument #3 (optional) is the degree of bend in the line (0 = straight line)
+%		-argument #4 (required) is the ending X point (coordinate/node) for the line
+%		-argument #5 (required) is the ending Y point (coordinate/node) for the line
+%		-argument #6 (optional) is the label for the diphthong
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\cardinaltoanydiphthong}{ O{left} m O{15} m m O{} }
+{%
+	% Error checking for #2 (cardinal vowel at diphthong starting point) - is empty?
+	\tl_if_empty:nT {#2} 
+		{ \PackageError{tikz-vowel:\cardinaltoanydiphthong}
+			{Cardinal~vowel~at~diphthong~starting~point~is~undefined}{} }
+	% Error checking for #4 (vowel x-axis ending point) - is empty?
+	\tl_if_empty:nT {#4}
+		{ \PackageError{tikz-vowel:\cardinaltoanydiphthong}
+			{Diphthong~x-axis~ending~point~is~undefined}{} }
+	% Error checking for #5 (vowel y-axis ending point) - is empty?
+	\tl_if_empty:nT {#5}
+		{ \PackageError{tikz-vowel:\cardinaltoanydiphthong}
+			{Diphthong~y-axis~ending~point~is~undefined}{} }
+
+	% Error checking for #2 (cardinal vowel at diphthong starting point) - is blank?
+	\tl_if_blank:nT {#2} 
+		{ \PackageError{tikz-vowel:\cardinaltoanydiphthong}
+			{Cardinal~vowel~at~diphthong~starting~point~is~undefined}{} }
+	% Error checking for #4 (vowel x-axis ending point) - is blank?
+	\tl_if_blank:nT {#4}
+		{ \PackageError{tikz-vowel:\cardinaltoanydiphthong}
+			{Diphthong~x-axis~ending~point~is~undefined}{} }
+	% Error checking for #5 (vowel y-axis ending point) - is blank?
+	\tl_if_blank:nT {#5}
+		{ \PackageError{tikz-vowel:\cardinaltoanydiphthong}
+			{Diphthong~y-axis~ending~point~is~undefined}{} }
+	
+	%------------------------------------------------------------------------------------------------
+	% Draw a line from cardinal vowel #2 to node (#4 ,#5)
+	% - put label #6 at the center point of the line
+	
+	% If there is no label specified (or it's blank), then draw no label at the center.
+	\tl_if_blank:nTF {#6}
+	{%
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#3,
+									name~path=#2to#4#5]
+									(#2) % Cardinal vowel
+								to
+									(#4 ,#5);%X, Y coordinates
+			}%
+		
+	}
+	{% Otherwise, label is specified.  Print it at center point of line.
+		% Set the token list to the string value (NOT actual macros/commands) of the label/name
+		\tl_set:Nx \l_tikzvowel_stripped_label_tl { \tl_to_str:n {#6} }
+
+		% Replace anything matching a command ( \ NAME { ) or a closing curly bracket with nothing
+		% (i.e. delete macro/command-related stuff - it's not allowed for the tikz node name
+		% ***WARNING***
+		% This may not cover all commands... it may need to be updated or added to eventually
+		% to account for additional complicated situations
+		\regex_replace_all:nnN { [\\]([^\\]*?)[\{]|[\}] } {} \l_tikzvowel_stripped_label_tl
+		\regex_replace_all:nnN { [\\]([^\\]*?)\s+ } {} \l_tikzvowel_stripped_label_tl
+		
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#3,
+									name~path=\exp_not:V \l_tikzvowel_stripped_label_tl]
+									(#2) % Cardinal vowel
+								to~
+									node [diphthongLabel] {\exp_not:n {#6}}
+										(#4 ,#5);%X, Y coordinates
+			}%
+	}%
+}%
+%----------------------------------------------------------------------
+%	Diphthong from specified x,y point to cardinal vowel
+%		-argument #1 (optional) is the bend of the line (left or right)
+%		-argument #2 (required) is the starting X, Y point (coordinate/node) for the line
+%		-argument #3 (optional) is the degree of bend in the line (0 = straight line)
+%		-argument #4 (required) is the ending point (coordinate/node) for the line
+%		-argument #5 (optional) is the label for the diphthong
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\xytocardinaldiphthong}{ O{left} D(){} O{15} m O{} }
+{%
+	% Error checking for #2 (vowel node X,Y location) - is empty?
+	\tl_if_empty:nT {#2}
+		{ \PackageError{tikz-vowel:\xytocardinaldiphthong}{Vowel~node~location~is~undefined}{} }
+
+	% Error checking for #2 (vowel node X,Y location) - is blank?
+	\tl_if_blank:nT {#2}
+		{ \PackageError{tikz-vowel:\xytocardinaldiphthong}{Vowel~node~location~is~undefined}{} }
+	
+	% Error checking for #3 (vowel node location) - 
+	% Contains unwanted letters/numbers/characters?
+	\regex_match:nnT { [^0-9\-.,\s] } { #2 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\xytocardinaldiphthong}
+			{Diphthong~node~ending~at~(#2)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}
+	}
+		
+	% Split the values for X and Y, based on a comma
+	\regex_split:nnNF { , } { #2 } \l_tikzvowel_coordinates_seq
+		{%
+			% No , character was found - throw error.
+			\PackageError{tikz-vowel:\xytocardinaldiphthong}
+				{Diphthong~node~ending~at~(#2)~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}
+		}
+ 	
+ 	% Error check - 
+	% Check if less than 1 element in the sequence (this should never happen).
+	\int_compare:nNnTF { \seq_count:N \l_tikzvowel_coordinates_seq } < { 1 }
+	{%
+ 		% If less than 1, something serious occurred - throw error.
+ 		\PackageError{tikz-vowel:\xytocardinaldiphthong}
+			{Diphthong~node~ending~at~(#2)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}
+ 	}
+ 	{%
+ 		% Error check -
+ 		% Check if greater than 2 elements in the sequence
+ 		\int_compare:nNnTF { \seq_count:N \l_tikzvowel_coordinates_seq } > { 2 }
+ 		{%
+ 			% If greater than 2, user typed something wrong - throw error.
+ 			\PackageError{tikz-vowel:\xytocardinaldiphthong}
+				{Diphthong~node~ending~at~'#2'~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}
+ 		}%
+ 	}%
+
+	% Call \anytocardinaldiphthong with the X, Y location specified
+	\anytocardinaldiphthong	[#1]
+							{\seq_item:Nn \l_tikzvowel_coordinates_seq {1}}
+							{\seq_item:Nn \l_tikzvowel_coordinates_seq {2}}
+							[#3]
+							{#4}
+							[#5]
+}%
+%----------------------------------------------------------------------
+%	Diphthong from specified x,y point to cardinal vowel
+%		-argument #1 (optional) is the bend of the line (left or right)
+%		-argument #2 (required) is the starting X point (coordinate/node) for the line
+%		-argument #3 (required) is the starting Y point (coordinate/node) for the line
+%		-argument #4 (optional) is the degree of bend in the line (0 = straight line)
+%		-argument #5 (required) is the ending point (coordinate/node) for the line
+%		-argument #6 (optional) is the label for the diphthong
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\anytocardinaldiphthong}{ O{left} m m O{15} m O{} }
+{%
+	% Error checking for #2 (vowel x-axis starting point) - is empty?
+	\tl_if_empty:nT {#2} 
+		{ \PackageError{tikz-vowel:\anytocardinaldiphthong}
+			{Diphthong~x-axis~starting~point~is~undefined}{} }
+	% Error checking for #3 (vowel y-axis starting point) - is empty?
+	\tl_if_empty:nT {#3}
+		{ \PackageError{tikz-vowel:\anytocardinaldiphthong}
+			{Diphthong~y-axis~starting~point~is~undefined}{} }
+	% Error checking for #5 (cardinal vowel at diphthong ending point) - is empty?
+	\tl_if_empty:nT {#5}
+		{ \PackageError{tikz-vowel:\anytocardinaldiphthong}
+			{Cardinal~vowel~at~diphthong~ending~point~is~undefined}{} }
+
+	% Error checking for #2 (vowel x-axis starting point) - is blank?
+	\tl_if_blank:nT {#2} 
+		{ \PackageError{tikz-vowel:\anytocardinaldiphthong}
+			{Diphthong~x-axis~starting~point~is~undefined}{} }
+	% Error checking for #3 (vowel y-axis starting point) - is blank?
+	\tl_if_blank:nT {#3}
+		{ \PackageError{tikz-vowel:\anytocardinaldiphthong}
+			{Diphthong~y-axis~starting~point~is~undefined}{} }
+	% Error checking for #5 (cardinal vowel at diphthong ending point) - is blank?
+	\tl_if_blank:nT {#5}
+		{ \PackageError{tikz-vowel:\anytocardinaldiphthong}
+			{Cardinal~vowel~at~diphthong~ending~point~is~undefined}{} }
+	
+	%------------------------------------------------------------------------------------------------
+	% Draw a line from node (#2 ,#3) to cardinal vowel #5
+	% - put label #6 at the center point of the line
+
+	% If there is no label specified (or it's blank), then draw no label at the center.
+	\tl_if_blank:nTF {#6}
+	{%
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#4,
+									name~path=#2#3to#5]
+									(#2 ,#3) % X, Y coordinates
+								to
+									( #5 );% Cardinal vowel
+			}%
+	}
+	{% Otherwise, label is specified.  Print it at center point of line.
+		% Set the token list to the string value (NOT actual macros/commands) of the label/name
+		\tl_set:Nx \l_tikzvowel_stripped_label_tl { \tl_to_str:n {#6} }
+
+		% Replace anything matching a command ( \ NAME { ) or a closing curly bracket with nothing
+		% (i.e. delete macro/command-related stuff - it's not allowed for the tikz node name
+		% ***WARNING***
+		% This may not cover all commands... it may need to be updated or added to eventually
+		% to account for additional complicated situations
+		\regex_replace_all:nnN { [\\]([^\\]*?)[\{]|[\}] } {} \l_tikzvowel_stripped_label_tl
+		\regex_replace_all:nnN { [\\]([^\\]*?)\s+ } {} \l_tikzvowel_stripped_label_tl
+		
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#4,
+									name~path=\exp_not:V \l_tikzvowel_stripped_label_tl]
+									(#2 ,#3) % X, Y coordinates
+								to~
+									node [diphthongLabel] {\exp_not:n {#6}}
+										( #5 );% Cardinal vowel
+			}%
+	}%
+}%
+%----------------------------------------------------------------------
+%	Diphthong from specified x1,y1 point to specified x2,y2
+%		-argument #1 (optional) is the bend of the line (left or right)
+%		-argument #2 (required) is the starting X, Y point (coordinate/node) for the line
+%		-argument #3 (optional) is the degree of bend in the line (0 = straight line)
+%		-argument #4 (required) is the ending X, Y point (coordinate/node) for the line
+%		-argument #5 (optional) is the label for the diphthong
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\xydiphthong}{ O{left} D(){} O{15} D(){} O{} }
+{%
+	% Error checking for #2 (vowel node X,Y location) - is empty?
+	\tl_if_empty:nT {#2}
+		{ \PackageError{tikz-vowel:\xydiphthong}{Vowel~diphthong~starting~location~is~undefined}{} }
+	% Error checking for #4 (vowel node X,Y location) - is empty?
+	\tl_if_empty:nT {#4}
+		{ \PackageError{tikz-vowel:\xydiphthong}{Vowel~diphthong~ending~location~is~undefined}{} }
+
+	% Error checking for #2 (vowel node X,Y location) - is blank?
+	\tl_if_blank:nT {#2}
+		{ \PackageError{tikz-vowel:\xydiphthong}{Vowel~diphthong~starting~location~is~undefined}{} }
+	% Error checking for #4 (vowel node X,Y location) - is blank?
+	\tl_if_blank:nT {#4}
+		{ \PackageError{tikz-vowel:\xydiphthong}{Vowel~diphthong~ending~location~is~undefined}{} }
+	
+	% Error checking for #2 (vowel node starting location) - 
+	% Contains unwanted letters/numbers/characters?
+	\regex_match:nnT { [^0-9\-.,\s] } { #2 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\xydiphthong}
+			{Diphthong~node~starting~at~(#2)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}
+	}
+	
+	% Error checking for #4 (vowel node ending location) - 
+	% Contains unwanted letters/numbers/characters?
+	\regex_match:nnT { [^0-9\-.,\s] } { #4 }
+	{%
+		% Unexpected character(s) found - throw error
+		\PackageError{tikz-vowel:\xydiphthong}
+			{Diphthong~node~ending~at~(#4)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}
+	}%
+		
+	% Split the values for starting X and Y, based on a comma
+	\regex_split:nnNF { , } { #2 } \l_tikzvowel_starting_coordinates_seq
+		{%
+			% No , character was found - throw error.
+			\PackageError{tikz-vowel:\xydiphthong}
+				{Diphthong~node~starting~at~(#2)~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+		}%
+	% Split the values for ending X and Y, based on a comma
+	\regex_split:nnNF { , } { #4 } \l_tikzvowel_ending_coordinates_seq
+		{%
+			% No , character was found - throw error.
+			\PackageError{tikz-vowel:\xydiphthong}
+				{Diphthong~node~ending~at~(#4)~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+		}%
+ 	
+ 	% Error check - 
+	% Check if less than 1 element in the sequence (this should never happen).
+	\int_compare:nNnTF { \seq_count:N \l_tikzvowel_starting_coordinates_seq } < { 1 }
+	{%
+ 		% If less than 1, something serious occurred - throw error.
+ 		\PackageError{tikz-vowel:\xydiphthong}
+			{Diphthong~node~starting~at~(#2)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}%
+ 	}
+ 	{%
+ 		% Error check -
+ 		% Check if greater than 2 elements in the sequence
+ 		\int_compare:nNnTF { \seq_count:N \l_tikzvowel_starting_coordinates_seq } > { 2 }
+ 		{%
+ 			% If greater than 2, user typed something wrong - throw error.
+ 			\PackageError{tikz-vowel:\xydiphthong}
+				{Diphthong~node~starting~at~'#2'~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+ 		}%
+ 	}%
+ 	
+ 	% Error check - 
+	% Check if less than 1 element in the sequence (this should never happen).
+	\int_compare:nNnTF { \seq_count:N \l_tikzvowel_ending_coordinates_seq } < { 1 }
+	{%
+ 		% If less than 1, something serious occurred - throw error.
+ 		\PackageError{tikz-vowel:\xydiphthong}
+			{Diphthong~node~ending~at~(#4)~is~invalid.~
+			Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+			Correct~syntax~is~'(X,Y)'.~
+			X~and~Y~must~be~an~integer~or~decimal~value}
+			{}%
+ 	}
+ 	{%
+ 		% Error check -
+ 		% Check if greater than 2 elements in the sequence
+ 		\int_compare:nNnTF { \seq_count:N \l_tikzvowel_ending_coordinates_seq } > { 2 }
+ 		{%
+ 			% If greater than 2, user typed something wrong - throw error.
+ 			\PackageError{tikz-vowel:\xydiphthong}
+				{Diphthong~node~ending~at~'#4'~is~invalid.~
+				Must~be~x-axis~and~y-axis~coordinates,~separated~by~a~comma.~
+				Correct~syntax~is~'(X,Y)'.~
+				X~and~Y~must~be~an~integer~or~decimal~value}
+				{}%
+ 		}%
+ 	}%
+
+	% Call \anydiphthong with the X, Y locations specified
+	\anydiphthong	[#1]
+					{\seq_item:Nn \l_tikzvowel_starting_coordinates_seq {1}}
+					{\seq_item:Nn \l_tikzvowel_starting_coordinates_seq {2}}
+					[#3]
+					{\seq_item:Nn \l_tikzvowel_ending_coordinates_seq {1}}
+					{\seq_item:Nn \l_tikzvowel_ending_coordinates_seq {2}}
+					[#5]
+}%
+%----------------------------------------------------------------------
+%	Diphthong from specified x1,y1 point to specified x2,y2
+%		-argument #1 (optional) is the bend of the line (left or right)
+%		-argument #2 (required) is the starting X point (coordinate/node) for the line
+%		-argument #3 (required) is the starting Y point (coordinate/node) for the line
+%		-argument #4 (optional) is the degree of bend in the line (0 = straight line)
+%		-argument #5 (required) is the ending X point (coordinate/node) for the line
+%		-argument #6 (required) is the ending Y point (coordinate/node) for the line
+%		-argument #7 (optional) is the label for the diphthong
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\anydiphthong}{ O{left} m m O{15} m m O{} }
+{%
+	% Error checking for #2 (vowel x-axis starting point) - is empty?
+	\tl_if_empty:nT {#2} 
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~x-axis~starting~point~is~undefined}{} }
+	% Error checking for #3 (vowel y-axis starting point) - is empty?
+	\tl_if_empty:nT {#3}
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~y-axis~starting~point~is~undefined}{} }
+	% Error checking for #5 (vowel x-axis ending point) - is empty?
+	\tl_if_empty:nT {#5} 
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~x-axis~ending~point~is~undefined}{} }
+	% Error checking for #6 (vowel y-axis ending point) - is empty?
+	\tl_if_empty:nT {#6}
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~y-axis~ending~point~is~undefined}{} }
+
+	% Error checking for #2 (vowel x-axis starting point) - is blank?
+	\tl_if_blank:nT {#2} 
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~x-axis~starting~point~is~undefined}{} }
+	% Error checking for #3 (vowel y-axis starting point) - is blank?
+	\tl_if_blank:nT {#3}
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~y-axis~starting~point~is~undefined}{} }
+	% Error checking for #5 (vowel x-axis ending point) - is blank?
+	\tl_if_blank:nT {#5} 
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~x-axis~ending~point~is~undefined}{} }
+	% Error checking for #6 (vowel y-axis ending point) - is blank?
+	\tl_if_blank:nT {#6}
+		{ \PackageError{tikz-vowel:\anydiphthong}
+			{Diphthong~y-axis~ending~point~is~undefined}{} }
+
+	%------------------------------------------------------------------------------------------------
+	% Draw a line from node (#2 ,#3) to node (#5 ,#6)
+	% - put label #7 at the center point of the line
+
+	% If there is no label specified (or it's blank), then draw no label at the center.
+	\tl_if_blank:nTF {#7}
+	{%
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#4,
+									name~path=#2#3to#5#6]
+									(#2 ,#3) 
+								to
+									(#5,#6);%
+			}%
+	}
+	{% Otherwise, label is specified.  Print it at center point of line.
+		% Set the token list to the string value (NOT actual macros/commands) of the label/name
+		\tl_set:Nx \l_tikzvowel_stripped_label_tl { \tl_to_str:n {#7} }
+
+		% Replace anything matching a command ( \ NAME { ) or a closing curly bracket with nothing
+		% (i.e. delete macro/command-related stuff - it's not allowed for the tikz node name
+		% ***WARNING***
+		% This may not cover all commands... it may need to be updated or added to eventually
+		% to account for additional complicated situations
+		\regex_replace_all:nnN { [\\]([^\\]*?)[\{]|[\}] } {} \l_tikzvowel_stripped_label_tl
+		\regex_replace_all:nnN { [\\]([^\\]*?)\s+ } {} \l_tikzvowel_stripped_label_tl
+		
+		\tl_gput_right:Nx \g_tikzvowel_draw_tl
+			{%
+				\exp_not:N \draw[diphthongLine,
+									bend~#1=#4,
+									name~path=\exp_not:V \l_tikzvowel_stripped_label_tl]
+									(#2 ,#3) 
+								to~
+									node [diphthongLabel] {\exp_not:n {#7}}
+										(#5,#6);%
+			}%
+	}
+}%
+%----------------------------------------------------------------------
+%
+%	New tikz-vowel environment
+%		-specifies sagittarial grid in background layer
+%			-see \cs_tikzvowel_populate_cardinal_vowel_coordinates:
+%		-allows vowel nodes (with or without a dot) in main layer
+%			-see \cardinalvowel
+%			-see \xyvowel
+%			-see \anyvowel
+%		-allows diphthong lines (with diphthong label midway in line) in main layer
+%			-see \cardinaldiphthong
+%			-see \cardinaltoxydiphthong
+%			-see \cardinaltoanydiphthong
+%			-see \xytocardinaldiphthong
+%			-see \anytocardinaldiphthong
+%			-see \xydiphthong
+%			-see \anydiphthong
+%
+%----------------------------------------------------------------------
+% Create a new token list to store the fixed vowel node label/name
+\tl_if_exist:NF \l_tikzvowel_fix_spaces_tl
+	{ \tl_new:N \l_tikzvowel_fix_spaces_tl }
+
+% Create a floating point value which is the scale factor for a tikzpicture
+\fp_if_exist:NF \g_tikzvowel_scale_fp
+	{ \fp_new:N \g_tikzvowel_scale_fp }
+
+% Create a constant for distance between label and node
+\dim_const:Nn \c_tikzvowel_label_distance_dim {0.85em}%{0.25cm}%{0.1cm}%
+
+% Create a constant for vertical offset of vowel label
+\dim_const:Nn \c_tikzvowel_label_vertical_offset_dim {-2.2pt}%{-0.55ex}%{-0.33333ex}%{-3.5pt}%{-2.5pt}%{-2.66666pt}
+
+% Create a sequence (i.e. list of tokens) to aid in separating X and Y coordinates from (X, Y) argument
+\seq_if_exist:NF \l_tikzvowel_optional_arg_seq
+	{ \seq_new:N \l_tikzvowel_optional_arg_seq }
+
+% Create a new token list to contain all, but the 'scale=...' argument from tikzpicture argument
+\tl_if_exist:NF \l_tikzvowel_remove_scale_tl
+	{ \tl_new:N \l_tikzvowel_remove_scale_tl }
+				
+\DeclareDocumentEnvironment{tikz-vowel}{ O{default} D(){scale=1} D<>{}}
+{%
+	% Clear all the nodes - in case a previous tikzpicture didn't
+	\tl_clear:N \g_tikzvowel_nodes_tl
+	% Clear all the diphthongs - in case a previous tikzpicture didn't
+	\tl_clear:N \g_tikzvowel_draw_tl
+
+	% Set the token list to the string value (NOT actual macros/commands) of the label/name
+	\tl_set:Nn \l_tikzvowel_fix_spaces_tl {#2}
+
+	% Check if value of #3 is 'transparency'
+	% - if true, use a transparent fill/background for node labels
+	\regex_match:nnTF { transparency } { #3 }
+	{%
+		\begin{tikzpicture}[transparency~group=knockout,#2]
+	}
+	{%
+		\begin{tikzpicture}[#2]
+	}
+		% Determine the scale factor from tikzpicture keyvalues
+		\pgfgettransformentries{\tikz@x@scale}{\@tempa}{\@tempa}{\tikz@y@scale}{\@tempa}{\@tempa}
+		
+		%Store the scale factor in a floating point variable for use elsewhere, if necessary
+		\fp_gset:Nn \g_tikzvowel_scale_fp { \tikz@x@scale }
+		
+		% Check if value of #3 is 'transparency'
+		% - if true, use a transparent fill/background for node labels
+		\regex_match:nnTF { transparency } { #3 }
+		{%
+			\tikzset
+			{%
+				vowelLetter/.style=	{scale=\fp_use:N \g_tikzvowel_scale_fp,
+									circle,
+									fill, opacity=0, text~opacity=1, 
+									inner~sep=0.5pt,
+									outer~sep=0pt,},%
+				vowelLabel/.style=	{scale=\fp_use:N \g_tikzvowel_scale_fp,
+									circle,
+									fill,opacity=0,text~opacity=1,
+									label~distance=\dim_use:N \c_tikzvowel_label_vertical_offset_dim,
+									node~distance=\dim_use:N \c_tikzvowel_label_distance_dim,
+									inner~sep=0.5pt,
+									outer~sep=0pt,},%	
+				diphthongLabel/.style=	{scale=\fp_use:N \g_tikzvowel_scale_fp,
+										midway,
+										circle,
+										fill, opacity=0, text~opacity=1,
+										inner~sep=0.5pt,
+										outer~sep=0pt,	},%												
+			}%
+		}
+		{% false - No transparency setting.  Use a white fill/background for vowel labels
+			\tikzset
+			{%
+				vowelLetter/.style=	{scale=\fp_use:N \g_tikzvowel_scale_fp,
+									circle,
+									fill=white,
+									inner~sep=0.5pt,
+									outer~sep=0pt,},%
+				vowelLabel/.style=	{scale=\fp_use:N \g_tikzvowel_scale_fp,
+									circle,
+									fill=white,
+									label~distance=\dim_use:N \c_tikzvowel_label_vertical_offset_dim,
+									node~distance=\dim_use:N \c_tikzvowel_label_distance_dim,
+									inner~sep=0.5pt,
+									outer~sep=0pt,},
+				diphthongLabel/.style=	{scale=\fp_use:N \g_tikzvowel_scale_fp,
+										midway,
+										circle,
+										fill=white,
+										inner~sep=0.5pt,
+										outer~sep=0pt,},%		
+			}%
+		}%
+		\tikzset
+		{%
+			vowelDot/.style=	{%scale=\fp_use:N \g_tikzvowel_scale_fp *0.5,
+								anchor=base,
+								inner~sep=\fp_use:N \g_tikzvowel_scale_fp *1.5pt,
+								outer~sep=0pt,
+								%node~distance=-20pt,
+								fill,
+								circle,},%
+			%diphthongLine/.style=	{-{Latex[length=1.5ex*\fp_use:N \g_tikzvowel_scale_fp,
+												%width=0.6em*\fp_use:N \g_tikzvowel_scale_fp]},},%
+			diphthongLine/.style=	{-stealth,
+									line~width=0.5pt*\fp_use:N \g_tikzvowel_scale_fp},
+			double~-stealth/.style~args={##1~colored~by~##2~and~##3}{
+											-stealth,line~width=##1,
+											##2,
+											postaction={-stealth,
+														draw,
+														##3,
+														line~width=(##1)/1.75,
+														shorten~<=(##1)/3,
+														shorten~>=2*(##1)/5},},
+														%line~width=(##1)/3,
+														%shorten~<=(##1)/3,
+														%shorten~>=2*(##1)/3},},
+		}%
+
+		\regex_match:nnTF { rectangle } {#1}
+		{%
+			\coordinate (hf) at (0,3); % the high front vertex
+			\coordinate (hb) at (4,3); % the high back vertex
+			\coordinate (lb) at (4,0); % the low back vertex
+			\coordinate (lf) at (0,0); % the low front vertex
+			
+			\tl_gset:cn { g_tikzvowel_xV1_tl } { 0 }
+			\tl_gset:cn { g_tikzvowel_xV2_tl } { 0 }
+			\tl_gset:cn { g_tikzvowel_xV3_tl } { 0 }
+			\tl_gset:cn { g_tikzvowel_xV4_tl } { 0 }
+			\tl_gset:cn { g_tikzvowel_xV5_tl } { 4 }
+			\tl_gset:cn { g_tikzvowel_xV6_tl } { 4 }
+			\tl_gset:cn { g_tikzvowel_xV7_tl } { 4 }
+			\tl_gset:cn { g_tikzvowel_xV8_tl } { 4 }
+			\tl_gset:cn { g_tikzvowel_xV9_tl } { 2 }
+			\tl_gset:cn { g_tikzvowel_xV10_tl } { 2 }
+			\tl_gset:cn { g_tikzvowel_xV11_tl } { 2 }
+			\tl_gset:cn { g_tikzvowel_xV12_tl } { 2 }
+			\tl_gset:cn { g_tikzvowel_xV13_tl } { 1 }
+			\tl_gset:cn { g_tikzvowel_xV14_tl } { 3 }
+			\tl_gset:cn { g_tikzvowel_xV15_tl } { 2 }
+			\tl_gset:cn { g_tikzvowel_xV16_tl } { 0 }	
+		}
+		{%
+			\regex_match:nnTF { triangle } {#1} 
+			{%
+				\coordinate (hf) at (0,3); % the high front vertex
+				\coordinate (hb) at (4,3); % the high back vertex
+				\coordinate (lb) at (2,0); % the low back vertex
+				\coordinate (lf) at (2,0); % the low front vertex
+			
+				\tl_gset:cn { g_tikzvowel_xV1_tl } { 0 }
+				\tl_gset:cn { g_tikzvowel_xV2_tl } { 0.66666 }
+				\tl_gset:cn { g_tikzvowel_xV3_tl } { 1.33333 }
+				\tl_gset:cn { g_tikzvowel_xV4_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV5_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV6_tl } { 2.66666 }
+				\tl_gset:cn { g_tikzvowel_xV7_tl } { 3.33333 }
+				\tl_gset:cn { g_tikzvowel_xV8_tl } { 4 }
+				\tl_gset:cn { g_tikzvowel_xV9_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV10_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV11_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV12_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV13_tl } { 1.16666 }
+				\tl_gset:cn { g_tikzvowel_xV14_tl } { 2.83333 }
+				\tl_gset:cn { g_tikzvowel_xV15_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV16_tl } { 1.66666 }
+			}
+			{%
+				\coordinate (hf) at (0,3); % the high front vertex
+				\coordinate (hb) at (4,3); % the high back vertex
+				\coordinate (lb) at (4,0); % the low back vertex
+				\coordinate (lf) at (2,0); % the low front vertex
+			
+				\tl_gset:cn { g_tikzvowel_xV1_tl } { 0 }
+				\tl_gset:cn { g_tikzvowel_xV2_tl } { 0.66666 }
+				\tl_gset:cn { g_tikzvowel_xV3_tl } { 1.33333 }
+				\tl_gset:cn { g_tikzvowel_xV4_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV5_tl } { 4 }
+				\tl_gset:cn { g_tikzvowel_xV6_tl } { 4 }
+				\tl_gset:cn { g_tikzvowel_xV7_tl } { 4 }
+				\tl_gset:cn { g_tikzvowel_xV8_tl } { 4 }
+				\tl_gset:cn { g_tikzvowel_xV9_tl } { 2 }
+				\tl_gset:cn { g_tikzvowel_xV10_tl } { 2.33333 }
+				\tl_gset:cn { g_tikzvowel_xV11_tl } { 2.5 }
+				\tl_gset:cn { g_tikzvowel_xV12_tl } { 2.66666 }
+				\tl_gset:cn { g_tikzvowel_xV13_tl } { 1.2 }
+				\tl_gset:cn { g_tikzvowel_xV14_tl } { 3.3 }
+				\tl_gset:cn { g_tikzvowel_xV15_tl } { 2.8 }
+				\tl_gset:cn { g_tikzvowel_xV16_tl } { 1.66666 }
+			}%
+		}%
+			
+		\draw (hf) -- (hb) -- (lb) -- (lf) -- cycle; % draws the trapezoid, rectangle, or triangle
+
+		\regex_match:nnF { plain } {#1}
+		{%
+			% Check if tikz-vowel arguments contain 'three'
+			\regex_match:nnTF { three } {#1}
+			{%
+				\draw ($(hf)!0.5!(lf)$) -- ($(hb)!0.5!(lb)$); % the mid line (horizontal)
+			}
+			{% Does not contain 'three'
+				\draw ($(hf)!1/3!(lf)$) -- ($(hb)!1/3!(lb)$); % the high-mid line (horizontal)
+				\draw ($(hf)!2/3!(lf)$) -- ($(hb)!2/3!(lb)$); % the low-mid line (horizontal)
+							
+				% Check if tikz-vowel arguments contain 'standard'
+				\regex_match:nnTF { standard } {#1}
+				{%
+					\coordinate (hf56lf) at ($(hf)!5/6!(lf)$);%
+					\coordinate (hb56lb) at ($(hb)!5/6!(lb)$);%
+					% the left line (vertical)
+					\draw ($(hf)!1/4!(hb)$) -- ($(hf56lf)!0.5!(hb56lb)$);%
+					% the right line (vertical)
+					\draw ($(hf)!3/4!(hb)$) -- ($(hf56lf)!0.5!(hb56lb)$);%
+					% the center line (vertical)
+					\draw ($(hf)!0.5!(hb)$) -- ($(hf56lf)!0.5!(hb56lb)$);%
+				}%
+				{%
+					\regex_match:nnF { simple } {#1}
+					{
+						\draw ($(hf)!0.5!(hb)$) -- ($(lf)!0.5!(lb)$); % the center line (vertical)
+					}%
+				}%
+			}%
+		}%
+		
+		% Populate the tikzpicture with coordinates for cardinal vowels
+		\cs_tikzvowel_populate_cardinal_vowel_coordinates:%
+}		
+{%
+		% Put all the nodes which were created into the output stream
+		\tl_use:N \g_tikzvowel_nodes_tl
+		% Put all the diphthongs which were created into the output stream
+		\tl_use:N \g_tikzvowel_draw_tl
+		
+		% Clear all the nodes
+		\tl_clear:N \g_tikzvowel_nodes_tl
+		% Clear all the diphthongs
+		\tl_clear:N \g_tikzvowel_draw_tl
+
+		% Clear all token list, integer, floating point, and sequence variables
+		% (just to avoid any potential problems with another picture)
+		\tl_clear:N \l_tikzvowel_update_tl
+		\tl_clear:N \l_tikzvowel_temp_tl
+		\tl_clear:N \l_tikzvowel_temp_XY_remove_comma_tl
+		\tl_clear:N \l_tikzvowel_stripped_label_tl
+		\int_zero:N \l_tikzvowel_counter_int
+		\int_zero:N \l_tikzvowel_cardinal_vowel_number_int
+		\seq_clear:N \l_tikzvowel_coordinates_seq
+		\seq_clear:N \l_tikzvowel_starting_coordinates_seq
+		\seq_clear:N \l_tikzvowel_ending_coordinates_seq
+		\tl_clear:N \l_tikzvowel_fix_spaces_tl
+		\fp_zero:N \g_tikzvowel_scale_fp
+		\seq_clear:N \l_tikzvowel_optional_arg_seq
+		\tl_clear:N \l_tikzvowel_remove_scale_tl
+
+	\end{tikzpicture}% 
+}%
+%
+%
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%	VOWEL LABEL styles
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%
+%----------------------------------------------------------------------
+%	Set the vowel label background color to #2
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is value to set as bg color
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelbgcolor}{ m m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {fill} {#2}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label font color to #2
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is value to set as font color
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelfontcolor}{ m m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {text} {#2}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border shape to a rectangle
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelrectangle}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {shape} {rectangle}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border shape to an ellipse
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelellipse}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {shape} {ellipse}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border shape to a coordinate
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelcoordinate}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {shape} {coordinate}
+}
+%
+%----------------------------------------------------------------------
+%	Create the vowel label border 
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborder}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {draw} {}
+}
+%
+%----------------------------------------------------------------------
+%	Create/Set the vowel label border on and color to #2
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is value to set as border color
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelbordercolor}{ m m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {draw} {#2}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label background padding to #2
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is value to set as padding length/width
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelbgpadding}{ m m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {inner~sep} {#2}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to #2
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is value to set as border line thickness/width
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborderwidth}{ m m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {line~width} {#2}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to ultra thin
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborderultrathin}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {ultra~thin} {}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to very thin
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborderverythin}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {very~thin} {}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to thin
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborderthin}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {thin} {}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to semithick
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelbordersemithick}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {semithick} {}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to thick
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborderthick}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {thick} {}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to very thick
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborderverythick}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {very~thick} {}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label border line thickness/width to ultra thick
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelborderultrathick}{ m }
+{
+	\cs_tikzvowel_set_vowel_label_options:nnn {#1} {ultra~thick} {}
+}
+%
+%----------------------------------------------------------------------
+%	Set vowel label tikz option (to value, if specified)
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is the TikZ option
+%		-argument #3 (optional) is the TikZ option value
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\settikzvowellabel}{ m m g }
+{%
+	\IfNoValueTF{#3}
+	{%
+		\cs_tikzvowel_set_vowel_label_options:nnn {#1} {#2} {}
+	}
+	{%
+		\cs_tikzvowel_set_vowel_label_options:nnn {#1} {#2} {#3}
+	}
+}
+%
+%----------------------------------------------------------------------
+%	Set the vowel label options to modify its appearance
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is (tikz) option/property to set
+%		-argument #3 (required) is value to set the (tikz) option/property to
+%----------------------------------------------------------------------
+\cs_new:Nn \cs_tikzvowel_set_vowel_label_options:nnn
+{%	
+	% Error checking for \g_tikzvowel_nodes_tl - is empty?
+	\tl_if_empty:NT \g_tikzvowel_nodes_tl
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
+				{No~vowels~exist!}
+				{}%
+		}%
+
+	% Error checking for \g_tikzvowel_nodes_tl - is blank?
+	\tl_if_blank:NT \g_tikzvowel_nodes_tl 
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
+				{No~vowels~exist!}
+				{}%
+		}%
+		
+	% Checking for #3 (tikz) option - is empty/blank?
+	\tl_if_blank:nTF {#3} 
+	{% Assume there is no value, only include the option (e.g. circle, rectangle, etc.)
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#2 }
+	}
+	{% There is a value, so set property equal to the option/property
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#2=#3 }
+	}%
+
+	\tl_set_eq:NN \l_tikzvowel_temp_tl \g_tikzvowel_nodes_tl
+	% Check for 'center' (or no location specified) version first
+	\regex_match:nVTF { \(#1\)\[vowelLetter.*?\] } \l_tikzvowel_temp_tl
+	{%
+		% Replace the vowel label/name properties with an updated version containing
+		% the new, appended property (and value, if applicable)
+		\regex_replace_once:nnNF { (\(#1\)\[vowelLetter.*?)\] }
+									{ \1\u{l_tikzvowel_update_tl}\] }
+									\l_tikzvowel_temp_tl
+		{% Unexpected character(s) found - throw error
+			\PackageError{tikz-vowel:cs_tikzvowel_set_label_options:nnn}
+				{Unexpected~error~with~vowel~label/name~'#1'}
+				{}%
+		}%
+	}
+	{% No 'center' (or no location specified) version found
+		\regex_match:nVTF { =of\s#1.*?\] } \l_tikzvowel_temp_tl
+		{%
+			% Replace the vowel label/name properties with an updated version containing
+			% the new, appended property (and value, if applicable)
+			\regex_replace_once:nnNF { (=of\s#1.*?)\] }
+										{ \1\u{l_tikzvowel_update_tl}\] }
+										\l_tikzvowel_temp_tl
+			{% Unexpected character(s) found - throw error
+				\PackageError{tikz-vowel:cs_tikzvowel_set_label_options:nnn}
+					{Unexpected~error~with~vowel~label/name~'#1'}
+					{}%
+			}%
+		}
+		{% No valid diphthong exists - throw an error
+			\PackageError{tikz-vowel:cs_tikzvowel_set_label_options:nnn}
+				{No~vowel~with~label/name~'#1'~found}
+				{}%
+		}%
+	}%
+	
+	% Set the global vowel token list to the updated, temporary token list
+	\tl_gset_eq:NN \g_tikzvowel_nodes_tl \l_tikzvowel_temp_tl
+	% Clear the temporary token list, to be safe
+	\tl_clear:N \l_tikzvowel_temp_tl
+	% Clear the update token list, to be safe
+	\tl_clear:N \l_tikzvowel_update_tl
+}%
+%
+%
+%----------------------------------------------------------------------
+%	Set the vowel node (marker) color
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelmarkercolor}{ m m }
+{%
+	\cs_tikzvowel_set_vowel_node_options:nnn {#1} {fill} {#2}
+}%
+%
+%----------------------------------------------------------------------
+%	Set the vowel node (marker) color
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelmarkerborder}{ m }
+{%
+	\cs_tikzvowel_set_vowel_node_options:nnn {#1} {draw} {}
+}%
+%
+%----------------------------------------------------------------------
+%	Set the vowel node (marker) color
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setvowelmarkerbordercolor}{ m m }
+{%
+	\cs_tikzvowel_set_vowel_node_options:nnn {#1} {draw} {#2}
+}%
+%
+%----------------------------------------------------------------------
+%	Set any TikZ option/value for the vowel marker/dot
+%		-argument #1 (required) - the vowel label/name
+%		-argument #2 (required) - the TikZ option
+%		-argument #3 (optional) - the TikZ option's value
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\settikzvowelmarker}{ m m g }
+{%
+	\IfNoValueTF{#3}
+	{%
+		\cs_tikzvowel_set_vowel_node_options:nnn {#1} {#2} {}
+	}
+	{%
+		\cs_tikzvowel_set_vowel_node_options:nnn {#1} {#2} {#3}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the vowel node options to modify its appearance
+%		-argument #1 (required) is the vowel name
+%		-argument #2 (required) is (tikz) option/property to set
+%		-argument #3 (required) is value to set the (tikz) option/property to
+%----------------------------------------------------------------------
+\cs_new:Nn \cs_tikzvowel_set_vowel_node_options:nnn
+{%	
+	% Error checking for \g_tikzvowel_nodes_tl - is empty?
+	\tl_if_empty:NT \g_tikzvowel_nodes_tl
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
+				{No~vowels~exist!}
+				{}%
+		}%
+
+	% Error checking for \g_tikzvowel_nodes_tl - is blank?
+	\tl_if_blank:NT \g_tikzvowel_nodes_tl 
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
+				{No~vowels~exist!}
+				{}%
+		}%
+		
+	% Checking for #3 (tikz) option - is empty/blank?
+	\tl_if_blank:nTF {#3} 
+	{% Assume there is no value, only include the option (e.g. circle, rectangle, etc.)
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#2 }
+	}
+	{% There is a value, so set property equal to the option/property
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#2=#3 }
+	}%
+
+	\tl_set_eq:NN \l_tikzvowel_temp_tl \g_tikzvowel_nodes_tl
+	% Check for 'center' (or no location specified) version first
+	\regex_match:nVTF { \(#1\)\[vowelLetter.*?\] } \l_tikzvowel_temp_tl
+	{%
+		\PackageError{tikz-vowel:cs_tikzvowel_set_vowel_node_options:nnn}
+				{Vowel~label/name~'#1'~is~only~a~label.~You~cannot~modify~its~dot/marker}
+				{}%
+	}
+	{% No 'center' (or no location specified) version found
+		\regex_match:nVTF { \(#1\)\[vowelDot, } \l_tikzvowel_temp_tl
+		{%
+			% Replace the vowel label/name properties with an updated version containing
+			% the new, appended property (and value, if applicable)
+			\regex_replace_once:nnNF { (\(#1\)\[vowelDot), }
+										{ \1\u{l_tikzvowel_update_tl}, }
+										\l_tikzvowel_temp_tl
+			{% Unexpected character(s) found - throw error
+				\PackageError{tikz-vowel:cs_tikzvowel_set_label_options:nnn}
+					{Unexpected~error~with~vowel~label/name~'#1'}
+					{}%
+			}%
+		}
+		{% No valid diphthong exists - throw an error
+			\PackageError{tikz-vowel:cs_tikzvowel_set_label_options:nnn}
+				{No~vowel~with~label/name~'#1'~found}
+				{}%
+		}%
+	}%
+	
+	% Set the global vowel token list to the updated, temporary token list
+	\tl_gset_eq:NN \g_tikzvowel_nodes_tl \l_tikzvowel_temp_tl
+	% Clear the temporary token list, to be safe
+	\tl_clear:N \l_tikzvowel_temp_tl
+	% Clear the update token list, to be safe
+	\tl_clear:N \l_tikzvowel_update_tl
+}%
+%
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%	DIPHTHONG line styles
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%
+%----------------------------------------------------------------------
+%	Set the vowel node (marker) color
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongborder}{ m m g }
+{%
+	\IfNoValueTF{#3}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {double} {#2}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {double} {#3}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the vowel node (marker) color
+%		-argument #1 (required) is the vowel name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongcolorborderwidth}{ m m m m }
+{%
+	% #4 is line width
+	% #2 is border
+	% #3 is inner color
+	%
+	\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {double~-stealth} {#4~colored~by~#3~and~#2}
+	
+	%double~-stealth/.style~args={##1~colored~by~##2~and~##3}
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line color
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (required) 
+%					EITHER		1) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%					OR			2) the line color
+%		-argument #3 (optional) 
+%								the line color
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1) + line color (#2)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2) + line color (#3)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthonglinecolor}{ m m g }
+{%
+	\IfNoValueTF{#3}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {draw} {#2}
+	}%
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {draw} {#3}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to specified thickness
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (required) 
+%					EITHER		1) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%					OR			2) the line thickness/width
+%		-argument #3 (optional) 
+%								the line thickness/width
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1) + line thickness/width (#2)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2) + line thickness/width (#3)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthonglinewidth}{ m m g }
+{%
+	\IfNoValueTF{#3}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {line~width} {#2}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {line~width} {#3}
+	}%
+}
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to ultra thick
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (optional) 
+%								the ending vowel label/name
+%								(either cardinal vowel or Y coordinate
+%									which was used when creating the vowel)
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongultrathick}{ m g }
+{%
+	\IfNoValueTF{#2}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {ultra~thick} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {ultra~thick} {}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to very thick
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (optional) 
+%								the ending vowel label/name
+%								(either cardinal vowel or Y coordinate
+%									which was used when creating the vowel)
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongverythick}{ m g }
+{%
+	\IfNoValueTF{#2}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {very~thick} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {very~thick} {}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to thick
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (optional) 
+%								the ending vowel label/name
+%								(either cardinal vowel or Y coordinate
+%									which was used when creating the vowel)
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongthick}{ m g }
+{%
+	\IfNoValueTF{#2}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {thick} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {thick} {}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to semi-thick
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (optional) 
+%								the ending vowel label/name
+%								(either cardinal vowel or Y coordinate
+%									which was used when creating the vowel)
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongsemithick}{ m g }
+{%
+	\IfNoValueTF{#2}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {semithick} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {semithick} {}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to thin
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (optional) 
+%								the ending vowel label/name
+%								(either cardinal vowel or Y coordinate
+%									which was used when creating the vowel)
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongthin}{ m g }
+{%
+	\IfNoValueTF{#2}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {thin} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {thin} {}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to very thin
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (optional) 
+%								the ending vowel label/name
+%								(either cardinal vowel or Y coordinate
+%									which was used when creating the vowel)
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongverythin}{ m g }
+{%
+	\IfNoValueTF{#2}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {very~thin} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {very~thin} {}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line thickness/width to ultra thin
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (optional) 
+%								the ending vowel label/name
+%								(either cardinal vowel or Y coordinate
+%									which was used when creating the vowel)
+%
+%		Argument structure allows for either:
+%			1)	identifying the diphthong by label/name (#1)
+%					(if it was labeled when creating the diphthong)
+%
+%			2)	identifying the starting vowel (#1) and ending vowel (#2)
+%					(if no label was used when creating the diphthong)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthongultrathin}{ m g }
+{%
+	\IfNoValueTF{#2}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {ultra~thin} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {ultra~thin} {}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set any TikZ option/value for the diphthong line
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(if #2, then use either cardinal vowel or X,Y coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (required) 
+%					EITHER		1) the ending vowel label/name
+%									(if #1, then use either cardinal vowel or X,Y coordinate
+%									which was used when creating the vowel)
+%					OR			2) the TikZ option
+%									(if two arguments given and first argument is diphthong label/name)
+%
+%		-argument #3 (optional) 
+%					EITHER		1) the TikZ option
+%									(if 3 arguments given and first and second argumenst
+%									are the starting and ending X,Y coordinates of diphthong)
+%					OR			2) the TikZ option's value 
+%									(if three arguments given and first argument is diphthong label/name)
+%
+%		-argument #4 (optional) - the TikZ option's value (if 3 arguments given)
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\settikzdiphthong}{ m m g g }
+{%
+	\IfNoValueTF{#4}
+	{%
+		\IfNoValueTF{#3}
+		{%
+			\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {#2} {}
+		}
+		{%
+			\cs_tikzvowel_set_diphthong_options:nnnn {#1} {} {#2} {#3}
+		}%
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_options:nnnn {#1} {#2} {#3} {#4}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line options to modify its appearance
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (required) 
+%					EITHER		1) the ending vowel label/name
+%								(use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%					OR			2) leave it empty, if the diphthong label/name is used
+%		-argument #3 (required) is (tikz) option/property to set
+%		-argument #4 (required) is value to set the (tikz) option/property to
+%----------------------------------------------------------------------
+\cs_new:Nn \cs_tikzvowel_set_diphthong_options:nnnn
+{%	
+	% Error checking for diphthong token list - is empty?
+	\tl_if_empty:NT \g_tikzvowel_draw_tl
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nn}
+				{No~diphthongs~exist!}
+				{}%
+		}%
+
+	% Error checking for diphthong token list - is blank?
+	\tl_if_blank:NT \g_tikzvowel_draw_tl 
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nn}
+				{No~diphthongs~exist!}
+				{}%
+		}%
+
+	% If no value for #4, assume there is a property with no value
+	\tl_if_blank:nTF {#4}
+	{% Assume there is no value, only include the option (e.g. circle, rectangle, etc.)
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#3 }
+	}
+	{% There is a value, so set property = value
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#3=#4 }
+	}%
+	
+	% Set temporary token list equal to the global diphthong token list
+	\tl_set_eq:NN \l_tikzvowel_temp_tl \g_tikzvowel_draw_tl
+
+	% If no value for #2, assume that diphthong label/name is use (NOT X, Y coordinates)
+	\tl_if_blank:nTF {#2}
+	{%
+		% Check to make sure a valid diphthong exists
+		\regex_match:nVTF { \[diphthongLine.*?name\s path=#1.*?\] } \l_tikzvowel_temp_tl
+		{%
+			% Replace the diphthong line properties with an updated version containing
+			% the new, appended property (and value, if applicable)
+			\regex_replace_once:nnNF { (\[diphthongLine,.*?name\s path=#1.*?)\] }
+										{ \1\u{l_tikzvowel_update_tl}\] }
+										\l_tikzvowel_temp_tl
+			{% Unexpected character(s) found - throw error
+				\PackageError{tikz-vowel:\cs_tikzvowel_set_diphthong_options:nnn}
+					{Unexpected~error~with~diphthong~'#1'}
+					{}%
+			}%
+		}
+		{% No valid diphthong exists - throw an error
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnnn}
+				{No~diphthong~'#1'~found}
+				{}%
+		}%
+	}
+	{% Value for #2, assume that X, Y coordinates (or cardinal vowel name) (NOT diphthong label/name)
+		% Create temporary token list which removes commas from diphthong 'name path'
+		\tl_set:Nn \l_tikzvowel_temp_XY_remove_comma_tl {#1to#2}
+		\regex_replace_all:nnN { , } { } \l_tikzvowel_temp_XY_remove_comma_tl
+
+		% Check to make sure a valid diphthong exists
+		\regex_match:xVTF { \exp_not:N \[ diphthongLine.*?name \exp_not:N \s path= \exp_not:V \l_tikzvowel_temp_XY_remove_comma_tl .*? \exp_not:N \] } \l_tikzvowel_temp_tl
+		{%
+			% Replace the diphthong line properties with an updated version containing
+			% the new, appended property (and value, if applicable)
+			\regex_replace_once:xnNF { (\exp_not:N \[diphthongLine.*?name\exp_not:N \s path=\exp_not:V \l_tikzvowel_temp_XY_remove_comma_tl.*?)\exp_not:N \] }
+										{ \1\u{l_tikzvowel_update_tl}\] }
+										\l_tikzvowel_temp_tl
+			{% Unexpected character(s) found - throw error
+				\PackageError{tikz-vowel:\cs_tikzvowel_set_diphthong_options:nnn}
+					{Unexpected~error~with~diphthong~starting~at~'#1'~
+						and~ending~at~'#2'}
+					{}%
+			}%
+		}
+		{% No valid diphthong exists - throw an error
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnnn}
+				{No~diphthong~starting~at~'#1'~and~ending~at~'#2'~found}
+				{}%
+		}%
+	}
+
+	% Set the global diphthong token list to the updated, temporary token list
+	\tl_gset_eq:NN \g_tikzvowel_draw_tl \l_tikzvowel_temp_tl
+	% Clear the temporary token list, to be safe
+	\tl_clear:N \l_tikzvowel_temp_tl
+	% Clear the update token list, to be safe
+	\tl_clear:N \l_tikzvowel_update_tl
+}%
+%
+%
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%	DIPHTHONG label styles
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%
+%----------------------------------------------------------------------
+%	Set the diphthong label background color
+%		-argument #1 (required) - the diphthong label/name
+%		-argument #2 (required) - the new background color for label
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthonglabelbgcolor}{ m m }
+{%
+	\cs_tikzvowel_set_diphthong_label_options:nnn {#1} {fill} {#2}
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong label border color
+%		-argument #1 (required) - the diphthong label/name
+%		-argument #2 (required) - the new border color for label
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthonglabelbordercolor}{ m m }
+{%
+	\cs_tikzvowel_set_diphthong_label_options:nnn {#1} {draw} {#2}
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong label with a border 
+% 		(default is either black OR the 'draw' color of the tikzpicture)
+%		-argument #1 (required) - the diphthong label/name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthonglabelborder}{ m }
+{%
+	\cs_tikzvowel_set_diphthong_label_options:nnn {#1} {draw} {}
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong label text color
+%		-argument #1 (required) - the diphthong label/name
+%		-argument #2 (required) - the new text color for label
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthonglabelcolor}{ m m }
+{%
+	\cs_tikzvowel_set_diphthong_label_options:nnn {#1} {text} {#2}
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong label background shape with rounded corners
+%		(default background is circle and this has no effect)
+%		(if background shape has been changed, e.g. to rectangle, this option will apply)
+%		-argument #1 (required) - the diphthong label/name
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\setdiphthonglabelroundedcorners}{ m }
+{%
+	\cs_tikzvowel_set_diphthong_label_options:nnn {#1} {rounded~corners}
+}%
+%
+%----------------------------------------------------------------------
+%	Set any TikZ option/value for the diphthong label
+%		-argument #1 (required) - the diphthong label/name
+%		-argument #2 (required) - the TikZ option
+%		-argument #3 (optional) - the TikZ option's value
+%----------------------------------------------------------------------
+\DeclareDocumentCommand{\settikzdiphthonglabel}{ m m g }
+{%
+	\IfNoValueTF{#3}
+	{%
+		\cs_tikzvowel_set_diphthong_label_options:nnn {#1} {#2} {}
+	}
+	{%
+		\cs_tikzvowel_set_diphthong_label_options:nnn {#1} {#2} {#3}
+	}%
+}%
+%
+%----------------------------------------------------------------------
+%	Set the diphthong line options to modify its appearance
+%		-argument #1 (required) 
+%					EITHER		1) the diphthong label/name
+%					OR			2) the starting vowel label/name
+%								(use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%		-argument #2 (required) 
+%					EITHER		1) the ending vowel label/name
+%								(use either cardinal vowel or X coordinate
+%									which was used when creating the vowel)
+%					OR			2) leave it empty, if the diphthong label/name is used
+%		-argument #3 (required) is (tikz) option/property to set
+%		-argument #4 (required) is value to set the (tikz) option/property to
+%----------------------------------------------------------------------
+\cs_new:Nn \cs_tikzvowel_set_diphthong_label_options:nnn
+{%	
+	% Error checking for diphthong token list - is empty?
+	\tl_if_empty:NT \g_tikzvowel_draw_tl
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_label_options:nn}
+				{No~diphthongs~exist!}
+				{}%
+		}%
+
+	% Error checking for diphthong token list - is blank?
+	\tl_if_blank:NT \g_tikzvowel_draw_tl 
+		{%
+			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_label_options:nn}
+				{No~diphthongs~exist!}
+				{}%
+		}%
+
+	% If no value for #4, assume there is a property with no value
+	\tl_if_blank:nTF {#3}
+	{% Assume there is no value, only include the option (e.g. circle, rectangle, etc.)
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#2 }
+	}
+	{% There is a value, so set property = value
+		\tl_set:Nn \l_tikzvowel_update_tl { ,#2=#3 }
+	}%
+	
+	% Set temporary token list equal to the global diphthong token list
+	\tl_set_eq:NN \l_tikzvowel_temp_tl \g_tikzvowel_draw_tl
+
+	% Check to make sure a valid diphthong exists
+	\regex_match:nVTF { \[diphthongLabel.*?\]\{.*?#1.*?\} } \l_tikzvowel_temp_tl
+	{%
+		% Replace the diphthong line properties with an updated version containing
+		% the new, appended property (and value, if applicable)
+		\regex_replace_once:nnNF { (\[diphthongLabel.*?)(\]\{.*?#1.*?\}) }
+									{ \1\u{l_tikzvowel_update_tl}\2 }
+									\l_tikzvowel_temp_tl
+		{% Unexpected character(s) found - throw error
+			\PackageError{tikz-vowel:\cs_tikzvowel_set_diphthong_label_options:nnn}
+				{Unexpected~error~with~diphthong~'#1'}
+				{}%
+		}%
+	}
+	{% No valid diphthong exists - throw an error
+		\tl_show_analysis:N \l_tikzvowel_temp_tl
+		\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_label_options:nnnn}
+			{No~diphthong~'#1'~found}
+			{}%
+	}%
+
+	% Set the global diphthong token list to the updated, temporary token list
+	\tl_gset_eq:NN \g_tikzvowel_draw_tl \l_tikzvowel_temp_tl
+	% Clear the temporary token list, to be safe
+	\tl_clear:N \l_tikzvowel_temp_tl
+	% Clear the update token list, to be safe
+	\tl_clear:N \l_tikzvowel_update_tl
+}%
+%
+%
+									

@@ -1,0 +1,1899 @@
+%!TEX TS-program =  latex
+\documentclass{article}
+%\documentclass{l3doc}
+\usepackage[margin=1.25in]{geometry}
+
+\usepackage[T3,T1]{fontenc}
+\usepackage{fontspec}
+\newfontfamily\charissil[Scale=MatchLowercase,
+%Ligatures guarantees that curly quotes will be used still
+Ligatures={Common,TeX},
+UprightFont={*},
+RawFeature=+onum,
+FakeBold=0]{Charis SIL}
+
+\usepackage[T1]{tipa}
+
+\usepackage{verbatim}
+
+\usepackage{xcolor}
+\usepackage{tikz-vowel}
+
+\usepackage{vowel}
+\usepackage{pst-vowel}
+
+\usepackage{metalogo}
+\usepackage{xspace}
+\usepackage{hologo}
+\newcommand{\pdfLaTeX}{\hologo{pdfLaTeX}\xspace}
+\newcommand{\TikZ}{Ti\textit{k}Z\xspace}
+
+\usepackage{fancyvrb, multicol, array}
+\usepackage[small]{titlesec}
+\usepackage{enumitem}
+
+\newcommand{\ignore}[1]{}
+
+\usepackage[hidelinks,bookmarksdepth=4,
+            pdfauthor={Christopher Weedall},
+            pdftitle={Package manual (English) for tikz-vowel},
+            pdfsubject={\pkg{tikz-vowel} package},
+            pdfkeywords={tikz-vowel, tikz, vowel, IPA, ipa, language, linguistics, chart, vowel chart},
+            pdfproducer={Latex with hyperref},
+            pdfcreator={miktex, xelatex, makeindex, makeglossaries}]{hyperref}
+
+
+\newcommand\bs{\textbackslash}
+\newcommand{\pkg}[1]{\texttt{#1}}
+
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries The \pkg{tikz-vowel} package}
+\vspace{.5in}
+
+\large Christopher Weedall\\The Australian National University\\\texttt{chris.weedall@anu.edu.au}
+
+\bigskip
+%March 08, 2017
+\today
+\end{center}
+
+\section{Introduction}
+
+Two packages exist for drawing vowel charts in \LaTeX: Rei Fukui's \pkg{vowel} package (distributed as part of the TIPA package) and Alan Munn's \pkg{pst-vowel} which incorporates drawing abilities from \pkg{pstricks}.  The \pkg{vowel} package fundamentally lacks the ability to draw diphthongs on the chart and the triangle diagram seems to be broken for back vowels.  The \pkg{pstricks} package has a limitation (that seems to be a bug) where, when using \XeLaTeX, the labels disappear when using \verb|\mput|, \verb|\lput|, \verb|\ncput|, etc.  Given the ease in directly inputting the International Phonetic Alphabet (IPA) via \pkg{fontenc} and \pkg{fontspec} in \XeLaTeX, I created this package as an alternative to \pkg{vowel} and \pkg{pst-vowel}.
+
+This \pkg{tikz-vowel} package aims to overcome some of the \pkg{pstricks} limitations, hide the drawing syntax/mechanics of the \pkg{tikz} package, and add some additional options and commands to make custom vowel and diphthong locations easier.  The package also was created using primarily \LaTeX3, therefore it should work with any documents or packages using \LaTeX3 (a small patch was used to allow it to work with \pkg{tikz}).  The package was written entirely from scratch and does not rely upon the inclusion of either \pkg{vowel} or \pkg{pst-vowel}.
+
+This documentation describes the \verb|tikz-vowel| environment and the various vowel and diphthong commands which can be used within that environment.  Users familiar with the \pkg{vowel} or \pkg{pst-vowel} packages should have little problem adapting.
+
+
+\tableofcontents
+
+\section{Requirements}
+\label{sec:Requirements}
+
+Since the package is based on \LaTeX3, it requires \pkg{expl3}.  The package also depends on \pkg{l3regex} and \pkg{xstring} for regular expressions and some string operations, as well as \pkg{xparse} for \LaTeX3-friendly new document commands and the \verb|tikz-vowel| environment.
+
+Generally speaking, this package should compile for most flavors of \LaTeX, such as \pdfLaTeX, \LuaLaTeX, and \XeLaTeX.  The \pkg{pst-vowel} package indicates that it must be compiled with latex+dvips (and not with pdflatex) due to \pkg{pstricks}, so hopefully this package also removes an limitations in that regard.
+
+Lastly, this \pkg{tikz-vowel}, as the name suggests, depends on \pkg{tikz}.  From the \pkg{tikz} package, it also requires \verb|\usetikzlibrary{calc}| and \verb|\usetikzlibrary{arrows.meta}| for calculations (for the diphthong arrows and vowel nodes) and the arrows on those (diphthong) lines, respectively.
+
+
+\section{Restrictions}
+\label{sec:Restrictions}
+
+Within the \verb|tikz-vowel| environment, any valid \TikZ code is allowed.  However, if you do directly use \TikZ code, be aware that manual inclusion of \TikZ commands is not officially supported by \pkg{tikz-vowel} - so your mileage may vary.  (Note: the vowel and diphthong commands provided in the \pkg{tikz-vowel} are essentially wrappers for \TikZ code).
+
+Aside from the vowel and diphthong commands provided in the \pkg{tikz-vowel} package, \TeX and \LaTeX commands are not supported within the \verb|tikz-vowel| environment - with the exception of the vowel or diphthong label.  Anything that you include will not be displayed anyway.  I recommend you do not include them, because they could create compilation errors that you are not expecting.
+
+Including \TeX and \LaTeX commands for vowel and diphthong labels (e.g. \verb|\textbf| and \verb|\textit|) should work, however, this method is not robustly supported.  If you have problems due to using one or more commands giving errors, best to take them out.  If you think it \textit{should} work, but it does not, contact the \pkg{tikz-vowel} maintainer and see if an update can account for the required command.
+
+Generally speaking, \textbf{only} the options and commands included within \pkg{tikz-vowel} should be used.  If you are using any other commands, do not be surprised if unexpected problems arise which are not supported by \pkg{tikz-vowel}.
+
+
+\section{\TikZ-vowel environment}
+\label{sec:TikZ-vowel environment}
+
+\subsection{Font effects for the \texttt{tikz-vowel} environment}
+\label{sec:Font effects for the tikz-vowel environment}
+
+One of the benefits to using \TikZ is that the \verb|tikz-vowel| environment can be modified by font styles and sizes to `globally' affect all text appearing within the vowel chart.  For example, if you to bold all the vowels, you can surround \verb|tikz-vowel| environment with \verb|{\bfseries| and \verb|}|.  Or for italics, surround \verb|| environment with \verb|{\itshape| and \verb|}|, and so forth.  Any text commands which allow \verb|\par| can surround the \verb|tikz-vowel| environment.  {\color{red}Note: this means commands such as \verb|\textbf| or \verb|\textit| {\large\textit{cannot}} surround the \verb|tikz-vowel| environment.}
+
+In addition to change font appearance, you can change the font size `globally' for an entire vowel chart.  To do so, you would surround the \verb|tikz-vowel| environment with curly brackets and have the desired font size command following the opening curly bracket.  Example: \verb|{\Large| \verb|tikz-vowel| environment \verb|}|.  Font size changes will affect only the size of the vowel labels and \textit{not} the size of the entire vowel chart (see \S \ref{sec:tikz-vowel environment} for more on vowel chart size). 
+
+
+\subsection{\pkg{tikz-vowel} environment}
+\label{sec:tikz-vowel environment}
+
+\medskip
+
+\begin{center}
+\begin{tabular}{ll}
+\verb|\begin{tikz-vowel}| & \verb|[|\textit{option\textsubscript{1} (, option\textsubscript{2}, \dots)}\verb|]| \\
+~ & \verb|(|\textit{tikz-option\textsubscript{1}=value\textsubscript{1} (, tikz-option\textsubscript{2}=value\textsubscript{2}, \dots)}\verb|)| \\
+~ & ~ \\
+\multicolumn{2}{l}{\qquad \% \textit{commands for inputting vowels}} \\
+~ & ~ \\
+\verb|\end{tikz-vowel}| & 
+\end{tabular}
+\end{center}
+
+\medskip
+
+Options and commands for inputting vowels (see \S \ref{sec:Vowels}) and diphthongs (see \S \ref{sec:Diphthongs}) are explained below.
+
+\subsection{Shapes of the \pkg{tikz-vowel} diagram}
+\label{sec:Shapes of the tikz-vowel diagram}
+
+There are three supported shapes for the vowel chart: trapezoid, \texttt{rectangle}, or \texttt{triangle}.  The  trapezoid is the \texttt{ipanew} (or unspecified), used unless \texttt{rectangle} or \texttt{triangle} is explicitly specified, and the typical chart shape use for IPA.  The trapezoid is used even if no \texttt{tikz-vowel} \textit{option}s are specified.  Chart shapes are mutually exclusive; you cannot, for example specify the chart as both rectangle and triangle.
+
+\bigskip
+\noindent
+The following options create each shape:
+
+\begin{center}
+\begin{tabular}{p{4.5cm} p{4.5cm} p{4.5cm}}
+  {\small
+	\underline{Trapezoid:}\newline\newline
+    \verb|\begin{tikz-vowel}|\newline
+    	\hspace*{3em}\dots\newline
+    \verb|\end{tikz-vowel}|\newline
+    \emph{or}\newline
+    \verb|\begin{tikz-vowel}[ipanew]|\newline
+    	\hspace*{3em}\dots\newline
+    \verb|\end{tikz-vowel}|\newline
+    }
+  &
+  {\small
+  	\underline{Rectangle:}\newline\newline
+    \verb|\begin{tikz-vowel}|\newline
+    	\hspace*{\fill}\verb|[rectangle]|\newline
+    	\hspace*{3em}\dots\newline
+    \verb|\end{tikz-vowel}|\newline
+    }
+  &
+  {\small
+  	\underline{Triangle:} \newline\newline
+    \verb|\begin{tikz-vowel}|\newline
+    	\hspace*{\fill}\verb|[triangle]|\newline
+    	\hspace*{3em}\dots\newline
+    \verb|\end{tikz-vowel}|\newline
+    }\\
+
+	\begin{tikz-vowel}(scale=0.75)\end{tikz-vowel} & 
+	\begin{tikz-vowel}[rectangle](scale=0.75)\end{tikz-vowel} & 
+	\begin{tikz-vowel}[triangle](scale=0.75)\end{tikz-vowel}
+
+\end{tabular}
+\end{center}
+
+\subsection{Internal lines/shapes of the \pkg{tikz-vowel} diagram}
+\label{sec:Internal lines/shapes of the tikz-vowel diagram}
+
+The following option are allowed in each shape:
+
+\begin{itemize}\itemsep0pt
+	\item \texttt{plain} \\\qquad No lines drawn within diagram boundaries.
+	\item \texttt{simple} \\\qquad Draws two horizontal lines (i.e. four vowel heights).
+	\item \texttt{standard} \\\qquad Draws three vertical lines from `turned a' to the top boundary.
+	\item \texttt{three} \\\qquad Draws one horizontal line (i.e. three vowel heights).
+\end{itemize}
+
+Using \texttt{three}, \texttt{simple}, \texttt{standard} supercede the \texttt{plain} option.  Using the \texttt{three} option automatically supercedes the options \texttt{simple} and \texttt{standard}.
+
+\noindent
+The following diagrams and their code illustrate the different internal lines possible with the trapezoid shape:
+
+\begin{center}
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}|\\
+    \verb|\end{tikz-vowel}|\\
+    \emph{or}\\
+    \verb|\begin{tikz-vowel}[ipanew]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[plain]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[ipanew]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[plain]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[simple]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[standard]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[simple]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[standard]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[three]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} & 
+  \begin{minipage}[t]{6.5cm}
+  {~}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[three]\end{tikz-vowel} \\}\end{minipage} &
+\end{tabular}
+\end{center}
+
+\noindent
+The following diagrams and their code illustrate the different internal lines possible with the \texttt{rectangle} shape:
+
+\begin{center}
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,plain]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[rectangle]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[rectangle,plain]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,simple]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,standard]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[rectangle,simple]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[rectangle,standard]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,three]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} & 
+  \begin{minipage}[t]{6.5cm}
+  {~}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[rectangle,three]\end{tikz-vowel} \\}\end{minipage} &
+\end{tabular}
+\end{center}
+
+\noindent
+The following diagrams and their code illustrate the different internal lines possible with the \texttt{triangle} shape:
+
+\begin{center}
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,plain]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[triangle]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[triangle,plain]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,simple]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,standard]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[triangle,simple]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[triangle,standard]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,three]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} & 
+  \begin{minipage}[t]{6.5cm}
+  {~}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \begin{tikz-vowel}[triangle,three]\end{tikz-vowel} \\}\end{minipage} &
+\end{tabular}
+\end{center}
+
+\subsection{\TikZ options for the \pkg{tikz-vowel} diagram}
+\label{sec:TikZ options for the tikz-vowel diagram}
+
+Literally any option that can be given to \verb|\begin{tikzpicture}| is valid for the \pkg{tikz-vowel} package.  You will need to consult the \pkg{tikz} package for details on these options.  Keep in mind that these options apply to the entire vowel chart.  The most common that will probably be used, however, is the \textit{scale} option which allows you to resize the entire \texttt{tikzpicture} (which is equivalent to the entire vowel chart defined by the \verb+\begin{tikz-vowel}+ environment).  Whereas surrounding the \texttt{tikz-vowel} environment with a font size will affect the size of the vowel and diphthong labels, the \textit{scale} option will affect the size of the chart, the vowel/diphthong labels, the vowel dots, and the length of the diphthong arrows.
+
+\bigskip
+\noindent
+Examples of different size charts, using the \textit{scale} option:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+	\begin{tikz-vowel}(scale=1)
+	\end{tikz-vowel}
+  \end{minipage} &
+  \begin{minipage}[t]{0.2\textwidth}
+  \vspace{-65pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}(scale=1)|
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+	\begin{tikz-vowel}(scale=0.5)
+	\end{tikz-vowel}
+  \end{minipage} &
+  \begin{minipage}[t]{0.2\textwidth}
+  \vspace{-45pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}(scale=0.5)|
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+	\begin{tikz-vowel}(scale=1.75)
+	\end{tikz-vowel}
+  \end{minipage} &
+  \begin{minipage}[t]{0.2\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}(scale=1.75)|
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+Examples of different line widths, using the \textit{line width} option:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+	\begin{tikz-vowel}(line width=2pt)
+	\end{tikz-vowel}
+  \end{minipage} &
+  \begin{minipage}[t]{0.2\textwidth}
+  \vspace{-65pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}(line width=2pt)|
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+	\begin{tikz-vowel}(line width=5pt)
+	\end{tikz-vowel}
+  \end{minipage} &
+  \begin{minipage}[t]{0.2\textwidth}
+  \vspace{-65pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}(line width=5pt)|
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+Examples of different colors, using the \textit{color} option:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(color=red)
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(color=red)|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(color=blue)
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(color=blue)|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+Examples of different text colors, using the \textit{text} option:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(text=red)
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(text=red)|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(text=blue)
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(text=blue)|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+Examples of different line colors, using the \textit{draw} option:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(draw=red)
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(draw=red)|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(draw=blue)
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(draw=blue)|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+
+\subsection{Background transparency of labels in the \pkg{tikz-vowel} diagram}
+\label{sec:Background transparency of labels in the tikz-vowel diagram}
+
+By default, the \texttt{tikz-vowel} diagram has no background.  However, the vowel labels have a white background.  The reason for this is so that they force a break in the diagram lines if they overlap.  The problem with this is that if you put the chart over a different color background or an image then the white background of the vowel labels noticeably contrasts with the background.  To accommodate people who want/need the break in the diagram lines \textit{and} want the background of the vowel labels to match the background, a transparency option has been created.
+
+\bigskip
+\noindent
+The example below has been placed on a red background to illustrate the white background of the vowel labels:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(show background rectangle,background rectangle/.style={fill=red})
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(show background rectangle,|\\\verb|background rectangle/.style={fill=red})|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+
+Using the transparency option eliminates these white backgrounds.  Depending on the PDF viewer you are using, it will look like those label backgrounds have become the same as the diagram's background OR you will see the same color, but (where applicable) the vowel label overlaps the lines behind them.
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}(show background rectangle,background rectangle/.style={fill=red})<transparency>
+		\cardinalvowel[left]{i}{1}
+		\cardinalvowel[right]{u}{v8}
+		\cardinalvowel{ə}{v11}
+		\cardinalvowel{ɐ}{v15}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}(show background rectangle,|\\\verb|background rectangle/.style={fill=red})<transparency>|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{v8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+
+The transparency option has a drawback, however.  This drawback is the reason this option is not set by default.  Not all PDF viewers properly support the \texttt{transparency group=knockout} option of a \texttt{tikzpicture}.  The \texttt{transparency group=knockout} option works in conjunction with the \texttt{fill, opacity=0, text~opacity=1} options of the vowel's label to create a transparent background which `sees' the document or \texttt{tikzpicture} background while simultaneously erasing the other lines, nodes, and labels behind it.
+
+PDF viewers such as Adobe Acrobat displays these options correctly.  Many other PDF views, such as SumatraPDF, the default viewer for TeXworks, and likely others, do not display this correctly.
+
+The viewers which do not display it correctly will look like the vowel label has \textit{no} background.  Therefore, if the vowel or diphthong label is above a line, for example, they will overlap.  The lines will not have a nice break before the labels, which makes the diagram less attractive.
+
+
+\section{Vowels}
+\label{sec:Vowels}
+
+The following tables present the trapezoidal vowel chart.  The left chart shows the location and number of cardinal\footnote{I use the term `cardinal vowels' in this package to actually refer to both cardinal vowels and secondary vowels.  This is in keeping with the way \pkg{vowel} package handled it and also to avoid two commands which are basically identical.\label{footnote:cardinal vowel}} vowels.  The middle one shows the actual cardinal vowels instead of the number.  The right chart shows a chart with all vowels at the cardinal vowel locations (including both rounded and unrounded versions).
+
+\begin{center}
+\begin{tabular}{lll}
+  \begin{tikz-vowel}
+    \cardinalvowel{\footnotesize 1}{1}\cardinalvowel{\footnotesize 2}{2}
+    \cardinalvowel{\footnotesize 3}{3}\cardinalvowel{\footnotesize 4}{4}
+    \cardinalvowel{\footnotesize 5}{5}\cardinalvowel{\footnotesize 6}{6}
+    \cardinalvowel{\footnotesize 7}{7}\cardinalvowel{\footnotesize 8}{8}
+    \cardinalvowel{\footnotesize 9}{9}\cardinalvowel{\footnotesize 10}{10}
+    \cardinalvowel{\footnotesize 11}{11}\cardinalvowel{\footnotesize 12}{12}
+    \cardinalvowel{\footnotesize 13}{13}\cardinalvowel{\footnotesize 14}{14}
+    \cardinalvowel{\footnotesize 15}{15}\cardinalvowel{\footnotesize 16}{16}
+  \end{tikz-vowel} &
+  {\charissil
+  \begin{tikz-vowel}
+    \cardinalvowel{i}{1}\cardinalvowel{e}{2}
+    \cardinalvowel{ɛ}{3}\cardinalvowel{a}{4}
+    \cardinalvowel{ɑ}{5}\cardinalvowel{ɔ}{6}
+    \cardinalvowel{o}{7}\cardinalvowel{u}{8}
+    \cardinalvowel{ɨ}{9}\cardinalvowel{ɘ}{10}
+    \cardinalvowel{ə}{11}\cardinalvowel{ɜ}{12}
+    \cardinalvowel{ɪ}{13}\cardinalvowel{ʊ}{14}
+    \cardinalvowel{ɐ}{15}\cardinalvowel{æ}{16}
+  \end{tikz-vowel}} &
+  {\charissil
+  \begin{tikz-vowel}
+    \cardinalvowel[left]{i}{1}\cardinalvowel[right]{y}{1}
+    \cardinalvowel[left]{e}{2}\cardinalvowel[right]{ø}{2}
+    \cardinalvowel[left]{ɛ}{3}\cardinalvowel[right]{œ}{3}
+    \cardinalvowel[left]{a}{4}\cardinalvowel[right]{ɶ}{4}
+    \cardinalvowel[left]{ɑ}{5}\cardinalvowel[right]{ɒ}{5}
+    \cardinalvowel[left]{ʌ}{6}\cardinalvowel[right]{ɔ}{6}
+    \cardinalvowel[left]{ɤ}{7}\cardinalvowel[right]{o}{7}
+    \cardinalvowel[left]{ɯ}{8}\cardinalvowel[right]{u}{8}
+    \cardinalvowel[left]{ɨ}{9}\cardinalvowel[right]{ʉ}{9}
+    \cardinalvowel[left]{ɘ}{10}\cardinalvowel[right]{ɵ}{10}
+    \cardinalvowel{ə}{11}
+    \cardinalvowel[left]{ɜ}{12}\cardinalvowel[right]{ɞ}{12}
+    \cardinalvowel[left]{ɪ}{13}\cardinalvowel[right]{ʏ}{13}
+    \cardinalvowel{ʊ}{14}
+    \cardinalvowel{ɐ}{15}
+    \cardinalvowel[left]{æ}{16}
+  \end{tikz-vowel}}
+\end{tabular}
+\end{center}
+
+\subsection{Cardinal\textsuperscript{\ref{footnote:cardinal vowel}} vowels}
+\label{sec:Cardinal vowels}
+
+\medskip
+\qquad \verb+\cardinalvowel[+\textit{optional position}\verb+]{+\textit{required vowel label}\verb+}{+\textit{required vowel number}\verb+}+
+\bigskip
+
+Cardinal (and secondary) vowels are ones which fit into the slots 1 -- 16, in the above diagram.  To keep consistency and add flexibility, these numbers (which are referred to as nodes) can be defined as either `1', `2', \dots `16' or `v1', `v2', \dots `v16'.  You can mix and match them also; for example, you can call \verb|\cardinalvowel| once with vowel node `5' and call it a second time with vowel node `8'.
+
+\bigskip
+
+\texttt{[}\textit{optional position}\texttt{]} options:
+
+\qquad \textit{left} | 
+\textit{right} | 
+\textit{above} | 
+\textit{below} | 
+\textit{above left} | 
+\textit{above right} | 
+\textit{below left} | 
+\textit{below right} | 
+
+\bigskip
+
+\texttt{\{}\textit{required vowel label}\texttt{\}} options:
+
+\qquad Can be almost anything without a \verb|\par| or new line (e.g. \verb+\\+).\footnote{A label longer than one character will probably create overlapping issues.  Vowel location option \texttt{[}\textit{center}\texttt{]} (or an unspecified location) will never have a label overlap its dot, because there is no dot.  Generally, \texttt{[}\textit{above left}\texttt{]}, \texttt{[}\textit{above}\texttt{]}, \texttt{[}\textit{above right}\texttt{]}, \texttt{[}\textit{right}\texttt{]}, \texttt{[}\textit{below left}\texttt{]}, \texttt{[}\textit{below}\texttt{]}, and \texttt{[}\textit{below right}\texttt{]} will avoid the label overlapping its vowel dot.  However, depending on various factors, there may be overlap between two vowels, a vowel and a diphthong, or two diphthongs.  These overlaps can be avoided either by altering the order in which you create vowels or diphthongs \textit{and/or} altering the location option of one or more vowel labels.}
+
+\bigskip
+
+\texttt{\{}\textit{required vowel number}\texttt{\}} options:
+
+\qquad \textit{1}, \textit{2}, \dots \textit{16} or \textit{v1}, \textit{v2}, \dots \textit{v16}
+
+\bigskip
+\noindent
+Examples with vowel number variation:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinalvowel{i}{1}
+			\cardinalvowel{e}{2}
+    			\cardinalvowel{ɛ}{3}
+    			\cardinalvowel{a}{4}
+    			\cardinalvowel{æ}{16}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel{|{\charissil e}\verb|}{2}|
+			\item \verb|\cardinalvowel{|{\charissil ɛ}\verb|}{3}|
+			\item \verb|\cardinalvowel{|{\charissil a}\verb|}{4}|
+			\item \verb|\cardinalvowel{|{\charissil æ}\verb|}{16}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+    			\cardinalvowel{ɑ}{v5}
+    			\cardinalvowel{ɔ}{v6}
+    			\cardinalvowel{o}{v7}
+    			\cardinalvowel{u}{v8}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel{|{\charissil ɑ}\verb|}{v5}|
+			\item \verb|\cardinalvowel{|{\charissil ɔ}\verb|}{v6}|
+			\item \verb|\cardinalvowel{|{\charissil o}\verb|}{v7}|
+			\item \verb|\cardinalvowel{|{\charissil u}\verb|}{v8}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+    			\cardinalvowel{ɨ}{v9}
+    			\cardinalvowel{ɘ}{10}
+   			\cardinalvowel{ə}{v11}
+   			\cardinalvowel{ɜ}{12}
+    			\cardinalvowel{ɪ}{v13}
+    			\cardinalvowel{ʊ}{14}
+    			\cardinalvowel{ɐ}{v15}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel{|{\charissil ɨ}\verb|}{v9}|
+			\item \verb|\cardinalvowel{|{\charissil ɘ}\verb|}{10}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{v11}|
+			\item \verb|\cardinalvowel{|{\charissil ɜ}\verb|}{12}|
+			\item \verb|\cardinalvowel{|{\charissil ɪ}\verb|}{v13}|
+			\item \verb|\cardinalvowel{|{\charissil ʊ}\verb|}{14}|
+			\item \verb|\cardinalvowel{|{\charissil ɐ}\verb|}{v15}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\noindent
+Examples with position specified:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinalvowel[left]{i}{1}
+			\cardinalvowel[left]{e}{2}
+    			\cardinalvowel[left]{ɛ}{3}
+    			\cardinalvowel[left]{a}{4}
+    			\cardinalvowel[right]{ɑ}{5}
+    			\cardinalvowel[right]{ɔ}{6}
+    			\cardinalvowel[right]{o}{7}
+    			\cardinalvowel[right]{u}{8}
+   			\cardinalvowel{ə}{11}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[left]{|{\charissil i}\verb|}{1}|
+			\item \verb|\cardinalvowel[left]{|{\charissil e}\verb|}{2}|
+			\item \verb|\cardinalvowel[left]{|{\charissil ɛ}\verb|}{3}|
+			\item \verb|\cardinalvowel[left]{|{\charissil a}\verb|}{4}|
+			\item \verb|\cardinalvowel[right]{|{\charissil ɑ}\verb|}{5}|
+			\item \verb|\cardinalvowel[right]{|{\charissil ɔ}\verb|}{6}|
+			\item \verb|\cardinalvowel[right]{|{\charissil o}\verb|}{7}|
+			\item \verb|\cardinalvowel[right]{|{\charissil u}\verb|}{8}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{11}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+    			\cardinalvowel[above]{ɨ}{9}
+    			\cardinalvowel[below left]{ɘ}{10}
+   			\cardinalvowel{ə}{11}
+   			\cardinalvowel[below right]{ɜ}{12}
+    			\cardinalvowel[above left]{ɪ}{13}
+    			\cardinalvowel[above right]{ʊ}{14}
+    			\cardinalvowel[below]{ɐ}{15}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[above]{|{\charissil ɨ}\verb|}{9}|
+			\item \verb|\cardinalvowel[below left]{|{\charissil ɘ}\verb|}{10}|
+			\item \verb|\cardinalvowel{|{\charissil ə}\verb|}{11}|
+			\item \verb|\cardinalvowel[below right]{|{\charissil ɜ}\verb|}{12}|
+			\item \verb|\cardinalvowel[above left]{|{\charissil ɪ}\verb|}{13}|
+			\item \verb|\cardinalvowel[above right]{|{\charissil ʊ}\verb|}{14}|
+			\item \verb|\cardinalvowel[below]{|{\charissil ɐ}\verb|}{15}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\subsection{Coordinate (X, Y) and anywhere vowels}
+\label{sec:Coordinate (X, Y) and anywhere vowels}
+
+In addition to cardinal vowels, it is possible to specify an arbitrary location for a vowel.  The vowel diagram is on a 4 (width) by 3 (height) grid space.  It is possible to go beyond this area (e.g. negative values or above 4 or 3, respectively), but doing so will skew the diagram.
+
+Two commands have been created where are nearly identical for this purpose.  The first, \verb|\xyvowel|, allows you to specify using (X, Y) notation.  The second, \verb|\anyvowel|, requires you send X as one argument and Y as a different argument.
+
+\medskip
+\qquad \verb+\xyvowel[+\textit{optional position}\verb+]+\\
+\qquad\hspace*{9em} \verb+{+\textit{required vowel label}\verb+}+\\
+\qquad\hspace*{9em} \verb+(+\textit{required X,Y coordinates}\verb+)+
+\bigskip
+%\xyvowel}{ O{center} m D(){} }
+
+
+\qquad \verb+\anyvowel[+\textit{optional position}\verb+]+\\
+\qquad\hspace*{9em} \verb+{+\textit{required vowel label}\verb+}+\\
+\qquad\hspace*{9em} \verb+{+\textit{required X coordinate}\verb+}+\\
+\qquad\hspace*{9em} \verb+{+\textit{required Y coordinate}\verb+}+
+\bigskip
+%\anyvowel}{ O{center} m m m }
+
+\noindent
+The example below illustrates the \verb|\xyvowel|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+    			\xyvowel[above]{1}(0.25,2.25)
+    			\xyvowel[below left]{2}(3.25,1.75)
+   			\xyvowel{3}(1.75,0.75)
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\xyvowel[above]{1}(0.25,2.25)|
+			\item \verb|\xyvowel[below left]{2}(3.25,1.75)|
+			\item \verb|\xyvowel{3}(1.75,0.75)|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+The example below illustrates the \verb|\anyvowel|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+    			\anyvowel[above]{1}{0.25}{2.25}
+    			\anyvowel[below left]{2}{3.25}{1.75}
+   			\anyvowel{3}{1.75}{0.75}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\anyvowel[above]{1}{0.25}{2.25}|
+			\item \verb|\anyvowel[below left]{2}{3.25}{1.75}|
+			\item \verb|\anyvowel{3}{1.75}{0.75}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\section{Diphthongs}
+\label{sec:Diphthongs}
+
+Diphthongs are vowels produced while the articulators are moving from an starting point to an ending point.  An arrow on the diagram is an easy visual cue of this movement, just as \pkg{pst-vowel} does.  The commands defined in \pkg{tikz-vowel} accomplish the same basic task as \pkg{pst-vowel} but provides seven commands to offer flexibility.
+
+Except for the cardinal vowel to cardinal vowel diphthong, the other diphthong commands have two versions which mirror the input of X,Y coordinates seen in \verb|\xyvowel| and \verb|\anyvowel|.  This difference is purely for stylistic preference.
+
+For all diphthong commands, the label is optional.  This contrasts with the vowel commands which have a mandatory label.
+
+For all diphthong commands, the bend directions can be \textit{left} or \textit{right}: default is \textit{left}.  
+
+For all diphthong commands, the degree of curve/bend can be any number, but a positive number between \textit{0} and \textit{90} will give the best results.  A negative number effectively flips the bend direction from \textit{left} to \textit{right}, or vice versa.  Numbers above \textit{90} make curves which seem unnatural in a vowel diagram setting.  A curve/bend of \textit{0} creates a straight line.
+
+\subsection{Diphthong from cardinal vowel to cardinal vowel}
+\label{sec:Diphthong from cardinal vowel to cardinal vowel}
+
+The command to draw a diphthong line from one cardinal vowel to another cardinal vowel is \verb|\cardinaldiphthong|:
+
+\medskip
+\qquad \verb+\cardinaldiphthong[+\textit{optional bend direction}\verb+]+\\
+\qquad\hspace*{12em} \verb+{+\textit{required starting vowel number}\verb+}+\\
+\qquad\hspace*{12em} \verb+[+\textit{optional degree of line curve/bend}\verb+]+\\
+\qquad\hspace*{12em} \verb+{+\textit{required ending vowel number}\verb+}+\\
+\qquad\hspace*{12em} \verb+[+\textit{optional vowel label}\verb+]+\\
+\bigskip
+
+\noindent
+The example below illustrates the \verb|\cardinaldiphthong|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinaldiphthong{v1}{v8}
+			\cardinaldiphthong[right]{v1}{v16}
+			\cardinaldiphthong{5}{11}[ɑə]
+    			\cardinaldiphthong[left]{13}{v15}[ɪɐ]
+    			\cardinaldiphthong[right]{v5}[90]{v8}[ɑu]
+    			\cardinaldiphthong{6}[0]{v9}[ɔɨ]
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinaldiphthong{v1}{v8}|
+			\item \verb|\cardinaldiphthong[right]{v1}{v16}|
+			\item \verb|\cardinaldiphthong{5}{11}[|{\charissil ɑə}\verb|]|
+			\item \verb|\cardinaldiphthong[left]{13}{v15}[|{\charissil ɪɐ}\verb|]|
+			\item \verb|\cardinaldiphthong[right]{v5}[90]{v8}[|{\charissil ɑu}\verb|]|
+			\item \verb|\cardinaldiphthong{6}[0]{v9}[|{\charissil ɔɨ}\verb|]|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+\subsection{Diphthong from cardinal vowel to (X, Y) / anywhere vowel}
+\label{sec:Diphthong from cardinal vowel to (X, Y) / anywhere vowel}
+
+The command to draw a diphthong line from one cardinal vowel to an (X, Y) coordinate is \verb|\cardinaltoxydiphthong|:
+
+\medskip
+\qquad \verb+\cardinaltoxydiphthong[+\textit{optional bend direction}\verb+]+\\
+\qquad\hspace*{16em} \verb+{+\textit{required starting vowel number}\verb+}+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional degree of line curve/bend}\verb+]+\\
+\qquad\hspace*{16em} \verb+(+\textit{required X,Y coordinates}\verb+)+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional vowel label}\verb+]+\\
+\bigskip
+
+\noindent
+The example below illustrates the \verb|\cardinaltoxydiphthong|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinaltoxydiphthong{v1}(3.75, 3.25)
+			\cardinaltoxydiphthong[right]{v1}(1,2)
+			\cardinaltoxydiphthong{5}(2.25,1.75)[ɑ?]
+    			\cardinaltoxydiphthong[left]{13}(1.5,1.15)[ɪ?]
+    			\cardinaltoxydiphthong[right]{v5}[90](4,2.5)[ɑ?]
+    			\cardinaltoxydiphthong{6}[0](2.25,2.8)[ɔ?]
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinaldiphthong{v1}(3.75, 3.25)|
+			\item \verb|\cardinaldiphthong[right]{v1}(1,2)|
+			\item \verb|\cardinaldiphthong{5}(2.25,1.75)[|{\charissil ɑ?}\verb|]|
+			\item \verb|\cardinaldiphthong[left]{13}(1.5,1.15)[|{\charissil ɪ?}\verb|]|
+			\item \verb|\cardinaldiphthong[right]{v5}[90](4,2.5)[|{\charissil ɑ?}\verb|]|
+			\item \verb|\cardinaldiphthong{6}[0](2.25,2.8)[|{\charissil ɔ?}\verb|]|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+The command to draw a diphthong line from one cardinal vowel to an X coordinate and a Y coordinate is \verb|\cardinaltoanydiphthong|:
+
+\medskip
+\qquad \verb+\cardinaltoanydiphthong[+\textit{optional bend direction}\verb+]+\\
+\qquad\hspace*{16em} \verb+{+\textit{required starting vowel number}\verb+}+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional degree of line curve/bend}\verb+]+\\
+\qquad\hspace*{16em} \verb+{+\textit{required X coordinate}\verb+}+\\
+\qquad\hspace*{16em} \verb+{+\textit{required Y coordinate}\verb+}+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional vowel label}\verb+]+\\
+\bigskip
+
+\noindent
+The example below illustrates the \verb|\cardinaltoanydiphthong|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinaltoanydiphthong{v1}{3.75}{3.25}
+			\cardinaltoanydiphthong[right]{v1}{1}{2}
+			\cardinaltoanydiphthong{5}{2.25}{1.75}[ɑ?]
+    			\cardinaltoanydiphthong[left]{13}{1.5}{1.15}[ɪ?]
+    			\cardinaltoanydiphthong[right]{v5}[90]{4}{2.5}[ɑ?]
+    			\cardinaltoanydiphthong{6}[0]{2.25}{2.8}[ɔ?]
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinaltoanydiphthong{v1}{3.75}{3.25}|
+			\item \verb|\cardinaltoanydiphthong[right]{v1}{1}{2}|
+			\item \verb|\cardinaltoanydiphthong{5}{2.25}{1.75}[|{\charissil ɑ?}\verb|]|
+			\item \verb|\cardinaltoanydiphthong[left]{13}{1.5}{1.15}[|{\charissil ɪ?}\verb|]|
+			\item \verb|\cardinaltoanydiphthong[right]{v5}[90]{4}{2.5}[|{\charissil ɑ?}\verb|]|
+			\item \verb|\cardinaltoanydiphthong{6}[0]{2.25}{2.8}[|{\charissil ɔ?}\verb|]|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+\subsection{Diphthong from (X, Y) / anywhere vowel to cardinal vowel}
+\label{sec:Diphthong from (X, Y) / anywhere vowel to cardinal vowel}
+
+The command to draw a diphthong line from an (X, Y) coordinate to a cardinal vowel is \verb|\xytocardinaldiphthong|:
+
+\medskip
+\qquad \verb+\xytocardinaldiphthong[+\textit{optional bend direction}\verb+]+\\
+\qquad\hspace*{16em} \verb+(+\textit{required X,Y coordinates}\verb+)+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional degree of line curve/bend}\verb+]+\\
+\qquad\hspace*{16em} \verb+{+\textit{required ending vowel number}\verb+}+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional vowel label}\verb+]+\\
+\bigskip
+
+\noindent
+The example below illustrates the \verb|\xytocardinaldiphthong|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\xytocardinaldiphthong[right](3.75, 3.25){v1}
+			\xytocardinaldiphthong(1,2){v1}
+			\xytocardinaldiphthong(2.25,1.75){5}[?ɑ]
+    			\xytocardinaldiphthong[right](1.5,1.15){13}[?ɪ]
+    			\xytocardinaldiphthong[left](4,2.5)[90]{v5}[?ɑ]
+    			\xytocardinaldiphthong(2.25,2.8)[0]{6}[?ɔ]
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\xytocardinaldiphthong[right](3.75, 3.25){v1}|
+			\item \verb|\xytocardinaldiphthong(1,2){v1}|
+			\item \verb|\xytocardinaldiphthong(2.25,1.75){5}[|{\charissil ?ɑ}\verb|]|
+			\item \verb|\xytocardinaldiphthong[right](1.5,1.15){13}[|{\charissil ?ɪ}\verb|]|
+			\item \verb|\xytocardinaldiphthong[left](4,2.5)[90]{v5}[|{\charissil ?ɑ}\verb|]|
+			\item \verb|\xytocardinaldiphthong(2.25,2.8)[0]{6}[|{\charissil ?ɔ}\verb|]|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+The command to draw a diphthong line from an X coordinate and a Y coordinate to a cardinal vowel is \verb|\anytocardinaldiphthong|:
+
+\medskip
+\qquad \verb+\anytocardinaldiphthong[+\textit{optional bend direction}\verb+]+\\
+\qquad\hspace*{16em} \verb+{+\textit{required X coordinate}\verb+}+\\
+\qquad\hspace*{16em} \verb+{+\textit{required Y coordinate}\verb+}+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional degree of line curve/bend}\verb+]+\\
+\qquad\hspace*{16em} \verb+{+\textit{required ending vowel number}\verb+}+\\
+\qquad\hspace*{16em} \verb+[+\textit{optional vowel label}\verb+]+\\
+\bigskip
+
+\noindent
+The example below illustrates the \verb|\anytocardinaldiphthong|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\anytocardinaldiphthong[right]{3.75}{3.25}{v1}
+			\anytocardinaldiphthong{1}{2}{v1}
+			\anytocardinaldiphthong{2.25}{1.75}{5}[?ɑ]
+    			\anytocardinaldiphthong[right]{1.5}{1.15}{13}[?ɪ]
+    			\anytocardinaldiphthong[left]{4}{2.5}[90]{v5}[?ɑ]
+    			\anytocardinaldiphthong{2.25}{2.8}[0]{6}[?ɔ]
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\anytocardinaldiphthong[right]{3.75}{3.25}{v1}|
+			\item \verb|\anytocardinaldiphthong{1}{2}{v1}|
+			\item \verb|\anytocardinaldiphthong{2.25}{1.75}{5}[|{\charissil ?ɑ}\verb|]|
+			\item \verb|\anytocardinaldiphthong[right]{1.5}{1.15}{13}[|{\charissil ?ɪ}\verb|]|
+			\item \verb|\anytocardinaldiphthong[left]{4}{2.5}[90]{v5}[|{\charissil ?ɑ}\verb|]|
+			\item \verb|\anytocardinaldiphthong{2.25}{2.8}[0]{6}[|{\charissil ?ɔ}\verb|]|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+\subsection{Diphthong from (X, Y) / anywhere vowel to (X, Y) / anywhere vowel}
+\label{sec:Diphthong from (X, Y) / anywhere vowel to (X, Y) / anywhere vowel}
+
+The command to draw a diphthong line from an (X, Y) coordinate to another (X, Y) coordinate is \verb|\xydiphthong|:
+
+\medskip
+\qquad \verb+\xydiphthong[+\textit{optional bend direction}\verb+]+\\
+\qquad\hspace*{11em} \verb+(+\textit{required starting X,Y coordinates}\verb+)+\\
+\qquad\hspace*{11em} \verb+[+\textit{optional degree of line curve/bend}\verb+]+\\
+\qquad\hspace*{11em} \verb+(+\textit{required ending X,Y coordinates}\verb+)+\\
+\qquad\hspace*{11em} \verb+[+\textit{optional vowel label}\verb+]+\\
+\bigskip
+
+\noindent
+The example below illustrates the \verb|\xydiphthong|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\xydiphthong(0,3.25)(4, 3.25)
+			\xydiphthong[left](0.25,2.75)[0](3.5,0.25)
+			\xydiphthong[right](3.85,0.15)(3.5,2.75)
+			\xydiphthong[right](2.5, 0.5)[65](1,0.5)[??]
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\xydiphthong(0,3.25)(4, 3.25)|
+			\item \verb|\xydiphthong[left](0.25,2.75)[0](3.5,0.25)|
+			\item \verb|\xydiphthong[right](3.85,0.15)(3.5,2.75)|
+			\item \verb|\xydiphthong[right](2.5, 0.5)[65](1,0.5)[|{\charissil ??}\verb|]|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+The command to draw a diphthong line from an X coordinate and a Y coordinate to a cardinal vowel is \verb|\anydiphthong|:
+
+\medskip
+\qquad \verb+\anydiphthong[+\textit{optional bend direction}\verb+]+\\
+\qquad\hspace*{11em} \verb+{+\textit{required starting X coordinate}\verb+}+\\
+\qquad\hspace*{11em} \verb+{+\textit{required starting Y coordinate}\verb+}+\\
+\qquad\hspace*{11em} \verb+[+\textit{optional degree of line curve/bend}\verb+]+\\
+\qquad\hspace*{11em} \verb+{+\textit{required ending X coordinate}\verb+}+\\
+\qquad\hspace*{11em} \verb+{+\textit{required ending Y coordinate}\verb+}+\\
+\qquad\hspace*{11em} \verb+[+\textit{optional vowel label}\verb+]+\\
+\bigskip
+
+\noindent
+The example below illustrates the \verb|\anydiphthong|:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\anydiphthong{0}{3.25}{4}{3.25}
+			\anydiphthong[left]{0.25}{2.75}[0]{3.5}{0.25}
+			\anydiphthong[right]{3.85}{0.15}{3.5}{2.75}
+			\anydiphthong[right]{2.5}{0.5}[65]{1}{0.5}[??]
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\anydiphthong{0}{3.25}{4}{3.25}|
+			\item \verb|\anydiphthong[left]{0.25}{2.75}[0]{3.5}{0.25}|
+			\item \verb|\anydiphthong[right]{3.85}{0.15}{3.5}{2.75}|
+			\item \verb|\anydiphthong[right]{2.5}{0.5}[65]{1}{0.5}[|{\charissil ??}\verb|]|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+
+\section{Command for \TikZ-related modifications}
+\label{sec:Command for TikZ-related modifications}
+
+Using \TikZ provides a huge amount of flexibility in the appearance of the \texttt{tikz-vowel} chart.  Some examples of this flexibility can be seen in \S \ref{sec:TikZ options for the tikz-vowel diagram}.  Those options, however, apply to the entire vowel chart and do not affect certain options of the vowel nodes labels and the diphthong lines and labels.  For this reason, this package includes a bunch of commands which modify specific options of the elements within the vowel chart.  Using all of these commands requires knowledge of the \TikZ options for \verb|\node|, \verb|\draw|, and the \texttt{label} option for each of these commands.  Please refer to the \pkg{tikz} manual for details.
+
+\subsection{Any \TikZ option, any value}
+\label{sec:Any TikZ option, any value}
+
+The following ten commands allow direct control over the vowel marker/node, vowel label, diphthong line, and diphthong label (if specified).  Behind the scenes, these commands search for the specific \verb|\node| or \verb|\draw| command specified and append the new option(s) and option value(s).  This done via regular expressions from the \pkg{l3regex} package.
+
+\bigskip
+\noindent
+Two \verb|\settikzvowelmarker| commands exist to modify a vowel marker/node's appearance.  The first allows you to specify a value-less \pkg{tikz} option (e.g. \texttt{circle}) for a vowel marker/node.  The second command requires both a \pkg{tikz} option and a value (e.g. (option) \texttt{line width} and (value) \texttt{5pt}) for a vowel marker/node.
+%\DeclareDocumentCommand{\settikzvowelmarker}{ m m g }
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzvowelmarker{|\textit{required vowel label}\verb|}|\\
+				\hspace*{10.5em}\verb|{|\textit{required tikz property}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzvowelmarker{|\textit{required vowel label}\verb|}|\\
+				\hspace*{10.5em}\verb|{|\textit{required tikz property}\verb|}|\\
+				\hspace*{10.5em}\verb|{|\textit{required tikz value}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+Two \verb|\settikzvowellabel| commands exist to modify a vowel label's appearance.  The first allows you to specify a value-less \pkg{tikz} option (e.g. \texttt{circle}) for a vowel label.  The second command requires both a \pkg{tikz} option and a value (e.g. (option) \texttt{line width} and (value) \texttt{5pt}) for a vowel label.
+%\DeclareDocumentCommand{\settikzvowellabel}{ m m g }
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzvowellabel{|\textit{required vowel label}\verb|}|\\
+				\hspace*{10em}\verb|{|\textit{required tikz property}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzvowellabel{|\textit{required vowel label}\verb|}|\\
+				\hspace*{10em}\verb|{|\textit{required tikz property}\verb|}|\\
+				\hspace*{10em}\verb|{|\textit{required tikz value}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+Four \verb|\settikzdiphthong| commands exist to modify a diphthong line's appearance.  Using the diphthong label, the first allows you to specify a value-less \pkg{tikz} option (e.g. \texttt{circle}) for a diphthong line.  Using the diphthong label, the second command requires both a \pkg{tikz} option and a value (e.g. (option) \texttt{line width} and (value) \texttt{5pt}) for a diphthong line.
+
+The third \verb|\settikzdiphthong| requires specifying the starting node (either cardinal vowel or X,Y coordinates) and ending node (either cardinal vowel or X,Y coordinates) and then specifying a value-less \pkg{tikz} option (e.g. \texttt{circle}).  The fourth command is the same but requires an additional argument to assign the \pkg{tikz} option to.
+
+If a diphthong label was specified during the creation of a diphthong, you \textbf{\large must} use either the first or second command to modify a diphthong.  If the diphthong label was not specified when creating a diphthong, you should use the third or fourth command.\footnote{Technically, you can use the first two commands, but you need to understand how the line name (i.e. the \TikZ option \texttt{name path}) was created.  The line name is set to the diphthong label, if specified.  If not, the line name is set to the starting node plus `to` plus the ending node (minus the commas, if using X,Y coordinates).  Depending on which of the diphthong commands was used (see \S \ref{sec:Diphthongs}), will depend on the exact line name.  For example, starting node is `1.2,3.4` and ending node is `2.75,0.5` will result in a line name of `1.23.4to2.750.5`.  If the starding node is cardinal vowel `v1` and ending node is `2.75,0.5`, then the line name will be `v1to2.750.5`.  Etc.}
+%\DeclareDocumentCommand{\settikzdiphthong}{ m m m g }
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzdiphthong{|\textit{required diphthong label}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required tikz property}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzdiphthong{|\textit{required diphthong label}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required tikz property}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required tikz value}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzdiphthong{|\textit{required starting vowel label (or `X,Y' coordinates)}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required ending vowel label (or `X,Y' coordinates)}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required tikz property}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzdiphthong{|\textit{required starting vowel label (or `X,Y' coordinates)}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required ending vowel label (or `X,Y' coordinates)}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required tikz property}\verb|}|\\
+				\hspace*{9.5em}\verb|{|\textit{required tikz value}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+Two \verb|\settikzdiphthonglabel| commands exist to modify a diphthong label's appearance.  The first allows you to specify a value-less \pkg{tikz} option (e.g. \texttt{circle}) for a diphthong label.  The second command requires both a \pkg{tikz} option and a value (e.g. (option) \texttt{line width} and (value) \texttt{5pt}) for a diphthong label.
+%\DeclareDocumentCommand{\settikzdiphthonglabel}{ m m g }
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzdiphthonglabel{|\textit{required diphthong label}\verb|}|\\
+				\hspace*{12em}\verb|{|\textit{required tikz property}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzdiphthonglabel{|\textit{required diphthong label}\verb|}|\\
+				\hspace*{12em}\verb|{|\textit{required tikz property}\verb|}|\\
+				\hspace*{12em}\verb|{|\textit{required tikz value}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+
+\subsubsection{Multiple options, values - Tricks/hacks}
+\label{sec:Multiple options, values - Tricks/hacks}
+
+If you abhor the idea of setting multiple options and values via repeated calls to the \verb|\settikz...{...}| commands above, there is a trick to setting more at once.  You can call the version of the command with no value argument and put all of the \TikZ options (and values, if applicable) into the \verb|{|\textit{required tikz property}\verb|}| argument.  For example, instead of calling \verb|\settikzvowelmarker| twice to set the color and then the line width, you could set both simultaneously via \verb|\settikzvowelmarker{draw=red,| \verb|inner sep=5pt}{}|
+
+\bigskip
+\noindent
+The example below illustrates the trick:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinalvowel[above right]{ɨ}{9}
+			\settikzvowelmarker{ɨ}{fill=red,inner sep=7pt}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[above right]{|{\charissil ɨ}\verb|}{9}|
+			\item \verb|\settikzvowelmarker{|{\charissil ɨ}\verb|}{fill=red,|\\
+					\hspace*{11.5em}\verb|inner sep=7pt}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\subsection{Commands to change a specific option}
+\label{sec:Commands to change a specific option}
+
+The list of commands below will never be comprehensive due to the many different options available in the \pkg{tikz} package and its many libraries.  However, there are some, such as setting the color or line thickness, that are fairly common.  If you are unfamiliar with \TikZ or simply want to use a command name that is descriptively helpful, these commands are for you.  More will be added if I get requests for something very common.
+
+There are already quite a lot of these `wrapper' commands, and so I will only present the commands and their options here.  I will provide a limited set of these in examples provided at the end of this section (see \S \ref{sec:Examples of commands to change TikZ options}).
+
+\bigskip
+\noindent
+Two \verb|\settikzvowelmarker| commands exist to modify a vowel marker/node's appearance.  The first allows you to specify a value-less \pkg{tikz} option (e.g. \texttt{circle}) for a vowel marker/node.  The second command requires both a \pkg{tikz} option and a value (e.g. (option) \texttt{line width} and (value) \texttt{5pt}) for a vowel marker/node.
+%\DeclareDocumentCommand{\settikzvowelmarker}{ m m g }
+\begin{center}
+	\begin{tabular}{l}
+		\begin{minipage}[t]{0.85\textwidth}
+			{\small
+				\verb|\settikzvowelmarker{|\textit{required vowel label}\verb|}|\\
+				\hspace*{10.5em}\verb|{|\textit{required tikz property}\verb|}|
+			}
+		\end{minipage} \\
+	\end{tabular}
+\end{center}
+%\DeclareDocumentCommand{\setvowelbgcolor}{ m m }
+%\DeclareDocumentCommand{\setvowelfontcolor}{ m m }
+%\DeclareDocumentCommand{\setvowelrectangle}{ m }
+%\DeclareDocumentCommand{\setvowelellipse}{ m }
+%\DeclareDocumentCommand{\setvowelcoordinate}{ m }
+%\DeclareDocumentCommand{\setvowelborder}{ m }
+%\DeclareDocumentCommand{\setvowelbordercolor}{ m m }
+%\DeclareDocumentCommand{\setvowelbgpadding}{ m m }
+%\DeclareDocumentCommand{\setvowelborderwidth}{ m m }
+%\DeclareDocumentCommand{\setvowelborderultrathin}{ m }
+%\DeclareDocumentCommand{\setvowelborderverythin}{ m }
+%\DeclareDocumentCommand{\setvowelborderthin}{ m }
+%\DeclareDocumentCommand{\setvowelbordersemithick}{ m }
+%\DeclareDocumentCommand{\setvowelborderthick}{ m }
+%\DeclareDocumentCommand{\setvowelborderverythick}{ m }
+%\DeclareDocumentCommand{\setvowelborderultrathick}{ m }
+%\DeclareDocumentCommand{\settikzvowellabel}{ m m g }
+
+
+\subsubsection{Examples of commands to change \TikZ options}
+\label{sec:Examples of commands to change TikZ options}
+
+This section contains a small assortment of the commands in \S \ref{sec:Commands to change a specific option} to provide a flavor of what they look like and how they are used.
+
+\bigskip
+\noindent
+The example below illustrates the \verb|\setdiphthonglabelcolor| command:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinalvowel[above]{i}{1}
+			\cardinalvowel[above right]{ɑ}{5}
+			\cardinaldiphthong{i}{ɑ}[iɑ]
+			\setdiphthonglabelcolor{iɑ}{red}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[above]{i}{1}|
+			\item \verb|\cardinalvowel[above right]{|{\charissil ɑ}\verb|}{5}|
+			\item \verb|\cardinaldiphthong{|{\charissil ɑ}\verb|}{|{\charissil ɑ}\verb|}[|{\charissil iɑ}\verb|]|
+			\item \verb|\setdiphthonglabelcolor{|{\charissil iɑ}\verb|}{red}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+The example below illustrates the \verb|\setdiphthonglabelbgcolor| command:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinalvowel[above]{i}{1}
+			\cardinalvowel[above right]{ɑ}{5}
+			\cardinaldiphthong{i}{ɑ}[iɑ]
+			\setdiphthonglabelbgcolor{iɑ}{red}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[above]{i}{1}|
+			\item \verb|\cardinalvowel[above right]{|{\charissil ɑ}\verb|}{5}|
+			\item \verb|\cardinaldiphthong{|{\charissil ɑ}\verb|}{|{\charissil ɑ}\verb|}[|{\charissil iɑ}\verb|]|
+			\item \verb|\setdiphthonglabelbgcolor{|{\charissil iɑ}\verb|}{red}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+The example below illustrates the \verb|\setdiphthonglinecolor| command:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinalvowel[above]{i}{1}
+			\cardinalvowel[above right]{ɑ}{5}
+			\cardinaldiphthong{i}{ɑ}[iɑ]
+			\setdiphthonglinecolor{iɑ}{red}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[above]{i}{1}|
+			\item \verb|\cardinalvowel[above right]{|{\charissil ɑ}\verb|}{5}|
+			\item \verb|\cardinaldiphthong{|{\charissil ɑ}\verb|}{|{\charissil ɑ}\verb|}[|{\charissil iɑ}\verb|]|
+			\item \verb|\setdiphthonglinecolor{|{\charissil iɑ}\verb|}{red}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+
+\bigskip
+\noindent
+The example below illustrates the \verb|\setdiphthonglabelcolor|, \verb|\setdiphthonglabelbgcolor|, and \verb|\setdiphthonglinecolor| commands used together:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.35\textwidth}
+	{\large\charissil
+		{\bfseries
+		\begin{tikz-vowel}
+			\cardinalvowel[above]{i}{1}
+			\cardinalvowel[above right]{ɑ}{5}
+			\cardinaldiphthong{i}{ɑ}[iɑ]
+			\setdiphthonglabelcolor{iɑ}{red}
+			\setdiphthonglabelbgcolor{iɑ}{red}
+			\setdiphthonglinecolor{iɑ}{red}
+		\end{tikz-vowel}
+		}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-90pt}
+  {\small
+\begin{itemize}[label={}]
+	\item \verb|\begin{tikz-vowel}|
+		\begin{itemize}[label={}]
+			\item \verb|\cardinalvowel[above]{i}{1}|
+			\item \verb|\cardinalvowel[above right]{|{\charissil ɑ}\verb|}{5}|
+			\item \verb|\cardinaldiphthong{|{\charissil ɑ}\verb|}{|{\charissil ɑ}\verb|}[|{\charissil iɑ}\verb|]|
+			\item \verb|\setdiphthonglabelcolor{|{\charissil iɑ}\verb|}{red}|
+			\item \verb|\setdiphthonglabelbgcolor{|{\charissil iɑ}\verb|}{red}|
+			\item \verb|\setdiphthonglinecolor{|{\charissil iɑ}\verb|}{red}|
+		\end{itemize}
+	\verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}
+\end{tabular}
+\end{center}
+ 
+ 
+\section{Limitations}
+\label{sec:Limitations}
+
+Any bugs which may exist in the \pkg{tikz} package will exist here also.  An additional issue that arises not due to the \pkg{tikz-vowel} package or \pkg{tikz} but due to PDF viewers is through the usage and proper viewing of transparency (see the end of \S \ref{sec:Background transparency of labels in the tikz-vowel diagram}).
+
+The various commands defined within \pkg{tikz-vowel} also limit access to various \pkg{tikz} functionality.  This, in large part, was by design.  Modifiying the wrong settings or setting option to values that you do not understand properly from \pkg{tikz} has the potential to break or significantly alter the vowel diagram which \pkg{tikz-vowel} provides.  If you need or want more flexibility, it is suggested that you not use \pkg{tikz-vowel} and manually create the diagram using \pkg{tikz} or another method of your choosing.
+
+%If I find that many users design a particular function/feature/modification that \pkg{tikz} offers but is not accessible by the various vowel and diphthong commands, I will look into this.  Presently, you can still manually add \pkg{tikz} code manually within the \texttt{tikz-vowel} environment.  That caveat, of course, is that this package avoids problems and automates many aspects of vowel diagram creation.
+
+
+
+
+%\begin{quotation}
+%This \pkg{tikz-vowel} is free software and may be distributed and/or modified under the conditions of the LaTeX Project Public License, either version 1.3 of this license or (at your option) any later version.  The latest version of this license is in http://www.latex-project.org/lppl.txt and version 1.3 or later is part of all distributions of LaTeX version 2005/12/01 or later.
+%\\\\
+%This work has the LPPL maintenance status `maintained'.
+%\\\\
+%The Current Maintainer of this work is Christopher Weedall.
+%\\\\
+%This work consists of the files tikz-vowel.dtx, tikz-vowel.ins, tikz-vowel.tex, tikz-vowel.pdf, and the derived file tikz-vowel.sty.
+%\end{quotation}
+
+\section{Disclaimer}
+\label{sec:Disclaimer}
+
+There is no warranty for the \pkg{tikz-vowel} package and all files therein, henceforce the Work. Except when otherwise stated in writing, the Copyright Holder provides the Work `as is’, without warranty of any kind, either expressed or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose. The entire risk as to the quality and performance of the Work is with you. Should the Work prove defective, you assume the cost of all necessary servicing, repair, or correction.
+
+In no event unless required by applicable law or agreed to in writing will The Copyright Holder, or any author named in the components of the Work, or any other party who may distribute and/or modify the Work as permitted above, be liable to you for damages, including any general, special, incidental or consequential damages arising out of any use of the Work or out of inability to use the Work (including, but not limited to, loss of data, data being rendered inaccurate, or losses sustained by anyone as a result of any failure of the Work to operate with any other programs), even if the Copyright Holder or said author or said other party has been advised of the possibility of such damages.
+
+While the author has taken many reasonable steps to ensure the package is working as presented and the documentation aids in understanding and accessing features of the package, errors or bugs may exist still.  If you choose to use this package, please make sure you have a backup method to create vowel charts in the event that somethings does not work as expected.
+
+Finally, this package is provides access to and features of the \pkg{tikz} package.  If you choose to use the \pkg{tikz-vowel} package and its commands, or \pkg{tikz} commands within \pkg{tikz-vowel}, it is your responsibility to resolve the \pkg{tikz} issues or to consult its documentation.  This documentation is not intended to help with the understanding or usage of \pkg{tikz} in any way.
+
+
+\section{Acknowledgements}
+\label{sec:Acknowledgements}
+I would like to thank Rei Fukui for creating the original \pkg{vowel} and Alan Munn for work on the \pkg{pst-vowel}, both packages upon which this \pkg{tikz-vowel} package is based.  I have based many parts of this documentation on either one of those packages, in order to aid in transitioning from either of them to this package.
+
+It was via discussion with Alan that I realized a transparency issue existed when using \pkg{pstricks} (and, therefore, \pkg{pst-vowel}) when using \XeLaTeX.  That discussion ultimately led me to creating this package.
+
+In addition to the above package authors, I had a great deal of help from numerous people online, either via accessible documents or often from my own or previously posted questions on Stack Exchange.  I would have struggled or possibly never gotten this package completed without such help!
+
+
+
+\ignore{
+			\cardinalvowel{i}{1}
+			\cardinalvowel{e}{2}
+    			\cardinalvowel{ɛ}{3}
+    			\cardinalvowel{a}{4}
+    			\cardinalvowel{ɑ}{5}
+    			\cardinalvowel{ɔ}{6}
+    			\cardinalvowel{o}{7}
+    			\cardinalvowel{u}{8}
+    			\cardinalvowel{ɨ}{9}
+    			\cardinalvowel{ɘ}{10}
+   			\cardinalvowel{ə}{11}
+   			\cardinalvowel{ɜ}{12}
+    			\cardinalvowel{ɪ}{13}
+    			\cardinalvowel{ʊ}{14}
+    			\cardinalvowel{ɐ}{15}
+    			\cardinalvowel{æ}{16}
+}%END IGNORE
+
+
+\end{document}
