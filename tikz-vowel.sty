@@ -56,11 +56,11 @@
 \RequirePackage{expl3}
 \ProvidesExplPackage
 	% Package name
-	{tikz-vowel}
+	{tikz-vowel-externalize}
 	% Release date
 	{2018/10/28}
 	% Release version          
-	{1.0}
+	{1.1}
 	% Description
 	{tikz-vowel package provides an environment allowing a (stylized) sagittal view for vowel plotting.}
 %
@@ -68,6 +68,7 @@
 \RequirePackage{expl3}
 \RequirePackage{xstring}%
 \RequirePackage{xparse}%
+\RequirePackage{environ}%
 %
 \RequirePackage{tikz}%
 %%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,10 +85,9 @@
 	}
 	{}{}
 \usetikzlibrary{arrows.meta,backgrounds,calc,fit,intersections,positioning,shapes.misc,shapes.geometric}%
-%TikZ externalization test:
-%\usetikzlibrary{external}
-%\tikzexternalize
-%\tikzset{external/force remake=true}
+%\usetikzlibrary{external}%
+%\tikzexternalize%
+%\tikzset{external/force remake}
 %
 \ExplSyntaxOn
 %
@@ -1289,26 +1289,30 @@
 % Create a new token list to store the fixed vowel node label/name
 \tl_if_exist:NF \l_tikzvowel_fix_spaces_tl
 	{ \tl_new:N \l_tikzvowel_fix_spaces_tl }
-
+%
 % Create a floating point value which is the scale factor for a tikzpicture
 \fp_if_exist:NF \g_tikzvowel_scale_fp
 	{ \fp_new:N \g_tikzvowel_scale_fp }
-
+%
 % Create a constant for distance between label and node
 \dim_const:Nn \c_tikzvowel_label_distance_dim {0.85em}%{0.25cm}%{0.1cm}%
-
+%
 % Create a constant for vertical offset of vowel label
 \dim_const:Nn \c_tikzvowel_label_vertical_offset_dim {-2.2pt}%{-0.55ex}%{-0.33333ex}%{-3.5pt}%{-2.5pt}%{-2.66666pt}
-
+%
 % Create a sequence (i.e. list of tokens) to aid in separating X and Y coordinates from (X, Y) argument
 \seq_if_exist:NF \l_tikzvowel_optional_arg_seq
 	{ \seq_new:N \l_tikzvowel_optional_arg_seq }
-
+%
 % Create a new token list to contain all, but the 'scale=...' argument from tikzpicture argument
 \tl_if_exist:NF \l_tikzvowel_remove_scale_tl
 	{ \tl_new:N \l_tikzvowel_remove_scale_tl }
-				
-\DeclareDocumentEnvironment{tikz-vowel}{ O{default} D(){scale=1} D<>{}}
+%
+\DeclareDocumentEnvironment{tikz-vowel}{ O{default} D(){scale=1} D<>{} }
+{\tikz@vowel@picture{#1}{#2}{#3}}
+{\endtikz@vowel@picture}%
+%
+\NewEnviron{tikz@vowel@picture}[3]
 {%
 	% Clear all the nodes - in case a previous tikzpicture didn't
 	\tl_clear:N \g_tikzvowel_nodes_tl
@@ -1317,16 +1321,16 @@
 
 	% Set the token list to the string value (NOT actual macros/commands) of the label/name
 	\tl_set:Nn \l_tikzvowel_fix_spaces_tl {#2}
-
+	
 	% Check if value of #3 is 'transparency'
 	% - if true, use a transparent fill/background for node labels
 	\regex_match:nnTF { transparency } { #3 }
 	{%
-		\@ifundefined{tikzexternaldisable}{}{\tikzexternaldisable}%
+		\tikzexternalize[prefix=figures/]%
 		\begin{tikzpicture}[transparency~group=knockout,#2]
 	}
 	{%
-		\@ifundefined{tikzexternaldisable}{}{\tikzexternaldisable}%
+		\tikzexternalize[prefix=figures/]%
 		\begin{tikzpicture}[#2]
 	}
 		% Determine the scale factor from tikzpicture keyvalues
@@ -1521,8 +1525,13 @@
 		
 		% Populate the tikzpicture with coordinates for cardinal vowels
 		\cs_tikzvowel_populate_cardinal_vowel_coordinates:%
-}		
-{%
+
+		%%%%%%%%%%%%%%
+		% Body the environment - provided via `environ' package
+		%%%%%%%%%%%%%%
+		\BODY
+		%%%%%%%%%%%%%%
+
 		% Put all the nodes which were created into the output stream
 		\tl_use:N \g_tikzvowel_nodes_tl
 		% Put all the diphthongs which were created into the output stream
@@ -1550,9 +1559,7 @@
 		\tl_clear:N \l_tikzvowel_remove_scale_tl
 
 	\end{tikzpicture}%
-	\@ifundefined{tikzexternalenable}{}{\tikzexternalenable}%
 }%
-%
 %
 %%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2523,4 +2530,3 @@
 }%
 %
 %
-									

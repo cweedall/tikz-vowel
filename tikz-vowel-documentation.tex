@@ -24,6 +24,16 @@ FakeBold=0]{Charis SIL}
 
 \usepackage{xcolor}
 \usepackage{tikz-vowel}
+\usetikzlibrary{external}%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Externalize: OPTION 1: save pictures into /figures/ subdirectory
+\tikzexternalize[prefix=figures/]%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Externalize: OPTION 2: save pictures into /figures/ subdirectory
+%\tikzexternalize%
+%\tikzsetexternalprefix{figures/}%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\tikzset{external/force remake}%
 
 \usepackage{vowel}
 \usepackage{pst-vowel}
@@ -88,26 +98,9 @@ Within the \verb|tikz-vowel| environment, any valid \TikZ code is allowed.  Howe
 
 Generally speaking, \textbf{only} the options and commands included within \pkg{tikz-vowel} should be used.  If you are using any other commands, do not be surprised if unexpected problems arise which are not supported by \pkg{tikz-vowel}.
 
-\subsection{Lacking official support}
-\label{sec:Lacking official support}
-
 Aside from the vowel and diphthong commands provided in the \pkg{tikz-vowel} package, \TeX and \LaTeX commands are not supported within the \verb|tikz-vowel| environment - with the exception of the vowel or diphthong label (of this \pkg{tikz-vowel} package).  Anything that you include will not be displayed anyway.  I recommend you do not include them, because they could create compilation errors that you are not expecting.
 
 Including \TeX and \LaTeX commands for vowel and diphthong labels (e.g. \verb|\textbf| and \verb|\textit|) should work, however, this method is not robustly supported.  If you have problems due to using one or more commands giving errors, best to take them out.  If you think it \textit{should} work, but it does not, contact the \pkg{tikz-vowel} maintainer and see if an update can account for the required command.
-
-\subsection{\TikZ externalization}
-\label{sec:TikZ externalization}
-
-\pkg{tikz-vowel} was created to `play nicely' with \TikZ externalization.  That is, if you enable externalization, \pkg{tikz-vowel} will not break.  However, none of your \verb|tikz-vowel| environment pictures will be externalized -- only your other \verb|tikzpicture| environments will be externalized
-
-Due to the creation of the \verb|tikz-vowel| environment, which wraps around the \verb|tikzpicture| environment, externalization causes an error.  The reason for this is that the \verb|\end{tikzpicture}| command is `hidden' by the \verb|\end{tikz-vowel}| command.  In other words, they need to both be expanded simultaneously.
-
-There may be a workaround for this, but the current version of \pkg{tikz-vowel} forcefully disables externalization via \verb|\tikzexternaldisable| and then re-enables externalization following the \verb|tikz-vowel| via \verb|\tikzexternalenable|.
-
-This may be somewhat annoying if you wish to use the externally generated \TikZ images elsewhere.  If you are simply interested in offloading the processing time for future compilations, then I can assure you that \verb|tikz-vowel| pictures are minimal in their processing requirements.  For example, this current documentation contains 20 pages and 53 \verb|tikzpicture| environments (wrapped within \verb|tikz-vowel| environment).  The compilation time averages 9.5 seconds, whereas the same document minus the \verb|tikz-vowel| environments compiles in 3.9 seconds.  That's roughly 105ms per \verb|tikz-vowel| environments.  You'll need to include a large number of them to make a significant impact on your document compilation time.
-
-If you absolutely need one or more particular \verb|tikz-vowel| in its own PDF or DVI, you'll need to manually put each in a .tex file and compile it.  When I find a viable alternative to this externalization issue, I will remove this restriction.
-
 
 
 \section{\TikZ-vowel environment}
