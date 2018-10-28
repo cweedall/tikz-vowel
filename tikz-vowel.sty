@@ -58,7 +58,7 @@
 	% Package name
 	{tikz-vowel}
 	% Release date
-	{2016/07/28}
+	{2018/10/28}
 	% Release version          
 	{1.0}
 	% Description
@@ -84,6 +84,10 @@
 	}
 	{}{}
 \usetikzlibrary{arrows.meta,backgrounds,calc,fit,intersections,positioning,shapes.misc,shapes.geometric}%
+%TikZ externalization test:
+%\usetikzlibrary{external}
+%\tikzexternalize
+%\tikzset{external/force remake=true}
 %
 \ExplSyntaxOn
 %
@@ -1318,9 +1322,11 @@
 	% - if true, use a transparent fill/background for node labels
 	\regex_match:nnTF { transparency } { #3 }
 	{%
+		\@ifundefined{tikzexternaldisable}{}{\tikzexternaldisable}%
 		\begin{tikzpicture}[transparency~group=knockout,#2]
 	}
 	{%
+		\@ifundefined{tikzexternaldisable}{}{\tikzexternaldisable}%
 		\begin{tikzpicture}[#2]
 	}
 		% Determine the scale factor from tikzpicture keyvalues
@@ -1543,7 +1549,8 @@
 		\seq_clear:N \l_tikzvowel_optional_arg_seq
 		\tl_clear:N \l_tikzvowel_remove_scale_tl
 
-	\end{tikzpicture}% 
+	\end{tikzpicture}%
+	\@ifundefined{tikzexternalenable}{}{\tikzexternalenable}%
 }%
 %
 %
