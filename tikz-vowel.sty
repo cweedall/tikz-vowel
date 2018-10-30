@@ -1326,11 +1326,9 @@
 	% - if true, use a transparent fill/background for node labels
 	\regex_match:nnTF { transparency } { #3 }
 	{%
-		\tikzexternalize[prefix=figures/]%
 		\begin{tikzpicture}[transparency~group=knockout,#2]
 	}
 	{%
-		\tikzexternalize[prefix=figures/]%
 		\begin{tikzpicture}[#2]
 	}
 		% Determine the scale factor from tikzpicture keyvalues
