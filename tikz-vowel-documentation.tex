@@ -48,14 +48,29 @@ FakeBold=0]{Charis SIL}
 \usepackage[small]{titlesec}
 \usepackage{enumitem}
 
-\usepackage[hidelinks,bookmarksdepth=4,
-            pdfauthor={Christopher Weedall},
-            pdftitle={Package manual (English) for tikz-vowel},
-            pdfsubject={tikz-vowel package},
-            pdfkeywords={tikz-vowel, tikz, vowel, IPA, ipa, language, linguistics, chart, vowel chart},
-            pdfproducer={Latex with hyperref},
-            pdfcreator={miktex, xelatex, makeindex, makeglossaries}]{hyperref}
-
+\usepackage[unicode,
+			hidelinks,
+			bookmarksdepth=4,
+			pdfauthor={Christopher Weedall},
+			pdftitle={Package manual (English) for tikz-vowel},
+			pdfsubject={tikz-vowel package},
+			pdfkeywords={tikz-vowel, tikz, vowel, IPA, ipa, language, linguistics, chart, vowel chart},
+			pdfproducer={Latex with hyperref},
+			pdfcreator={miktex, xelatex, makeindex, makeglossaries}]{hyperref}
+% Stop hyperref from complaining about endlines and italics in chapter/section headers
+% by replacing unsupported characters with nothing and removing the font/style change
+% in the hyperlink/reference
+\pdfstringdefDisableCommands{%
+	\def\\{}%
+	\def\textsuperscript#1{<#1>}%
+	\def\textsc#1{<#1>}%
+	\def\texttt#1{<#1>}%
+	\def\textcite#1{<#1>}%
+	\def\posscite#1{<#1>}%
+	\def\charissil{}%
+	\def\newline{~}%
+	\def\gls{}%
+}
 
 \begin{document}
 
