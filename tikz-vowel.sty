@@ -100,7 +100,8 @@
 \cs_generate_variant:Nn \regex_match:nnTF {nVTF}
 %
 % Generate a NT variant for \tl_if_blank:nT
-\cs_generate_variant:Nn \tl_if_blank:nT {NT}
+%\cs_generate_variant:Nn \tl_if_blank:nT {NT}% <---- 'N' is DEPRECATED
+\cs_generate_variant:Nn \tl_if_blank:nT {VT}
 %
 %----------------------------------------------------------------------
 %	Define the x and y coordinates of vowel nodes v1 - v16
