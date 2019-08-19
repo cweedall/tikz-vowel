@@ -51,9 +51,10 @@
 % tikz package .  TikZ is used to essentially draw everything.
 %
 % Version 1.0 2017/03/18
+% Version 1.1 2019/08/18
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\RequirePackage{expl3}
+%\RequirePackage{expl3}
 \ProvidesExplPackage
 	% Package name
 	{tikz-vowel}
@@ -90,6 +91,14 @@
 %\tikzset{external/force remake}
 %
 \ExplSyntaxOn
+%
+%%% Set default label styles
+\tikzset
+{%
+	tikzvowel~labels/.style=		{font=\footnotesize,},
+	tikzvowel~top~labels/.style=	{},
+	tikzvowel~side~labels/.style=	{anchor=east,align=right,},
+}%
 %
 %%%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %
@@ -268,6 +277,30 @@
 			\tl_use:c { g_tikzvowel_yV\int_use:N \l_tikzvowel_counter_int _tl });%
 	}%
 }%
+%
+%----------------------------------------------------------------------
+%	Create top labels (`Front', `Central', `Back')
+%----------------------------------------------------------------------
+\cs_new:Nn \cs_tikzvowel_draw_top_labels:
+{%
+	%Top labels
+	\node[tikzvowel~labels,tikzvowel~top~labels] (FrontLabel) at (0, 3.65) {Front};
+	\node[tikzvowel~labels,tikzvowel~top~labels] (CentralLabel) at (2, 3.65) {Central};
+	\node[tikzvowel~labels,tikzvowel~top~labels] (BackLabel) at (4, 3.65) {Back};
+}%
+%
+%----------------------------------------------------------------------
+%	Create side labels (`Close', `Close-mid', `Open-mid', `Open')
+%----------------------------------------------------------------------
+\cs_new:Nn \cs_tikzvowel_draw_side_labels:
+{%
+	%Left side labels
+	\node[tikzvowel~labels,tikzvowel~side~labels] (CloseLabel) at (-0.65, 3) {Close};
+	\node[tikzvowel~labels,tikzvowel~side~labels] (ClosemidLabel) at (-0.65, 2) {Close-mid};
+	\node[tikzvowel~labels,tikzvowel~side~labels] (OpenmidLabel) at (-0.65, 1) {Open-mid};
+	\node[tikzvowel~labels,tikzvowel~side~labels] (OpenLabel) at (-0.65, 0) {Open};
+}%
+%
 %----------------------------------------------------------------------
 %	Create cardinal vowel node with a label (or name)
 %		-argument #1 (optional) is the location of the label (if unspecified, `center' is default)
@@ -1413,7 +1446,8 @@
 														%shorten~<=(##1)/3,
 														%shorten~>=2*(##1)/3},},
 		}%
-
+		
+		% If picture has 'rectangle' layout
 		\regex_match:nnTF { rectangle } {#1}
 		{%
 			\coordinate (hf) at (0,3); % the high front vertex
@@ -1439,6 +1473,7 @@
 			\tl_gset:cn { g_tikzvowel_xV16_tl } { 0 }	
 		}
 		{%
+			% If picture has 'triangle' layout
 			\regex_match:nnTF { triangle } {#1} 
 			{%
 				\coordinate (hf) at (0,3); % the high front vertex
@@ -1464,6 +1499,7 @@
 				\tl_gset:cn { g_tikzvowel_xV16_tl } { 1.66666 }
 			}
 			{%
+				% If picture has NEITHER `rectangle' or 'triangle' layout
 				\coordinate (hf) at (0,3); % the high front vertex
 				\coordinate (hb) at (4,3); % the high back vertex
 				\coordinate (lb) at (4,0); % the low back vertex
@@ -1489,7 +1525,8 @@
 		}%
 			
 		\draw (hf) -- (hb) -- (lb) -- (lf) -- cycle; % draws the trapezoid, rectangle, or triangle
-
+		
+		% If picture has 'plain' layout
 		\regex_match:nnF { plain } {#1}
 		{%
 			% Check if tikz-vowel arguments contain 'three'
@@ -1524,12 +1561,52 @@
 		
 		% Populate the tikzpicture with coordinates for cardinal vowels
 		\cs_tikzvowel_populate_cardinal_vowel_coordinates:%
+		
+		
 
 		%%%%%%%%%%%%%%
 		% Body the environment - provided via `environ' package
 		%%%%%%%%%%%%%%
 		\BODY
 		%%%%%%%%%%%%%%
+		
+		% If diagram uses (only) top labels
+		\regex_match:nnTF { top[\s]labels } {#1}
+		{%
+			% Draw top labels
+			\cs_tikzvowel_draw_top_labels:%
+		}%
+		{%
+			% If diagram uses (only) side labels
+			\regex_match:nnTF { side[\s]labels } {#1}
+			{%
+				% Draw side labels
+				\cs_tikzvowel_draw_side_labels:%
+			}%
+			{%
+				% If diagram uses ALL labels
+				\regex_match:nnTF { labels } {#1}
+				{%
+					% Draw top labels
+					\cs_tikzvowel_draw_top_labels:%
+					% Draw side labels
+					\cs_tikzvowel_draw_side_labels:%
+				}%
+				{%
+					% DIAGRAM USES NO LABELS -- THIS IS DEFAULT
+				}%
+			
+			}%
+			%Top labels
+			%\node[labels,labels top] (FrontLabel) at (0, 3.65) {Front};
+			%\node[labels,labels top] (CentralLabel) at (2, 3.65) {Central};
+			%\node[labels,labels top] (BackLabel) at (4, 3.65) {Back};
+			%Left side labels
+			%\node[labels,labels side] (CloseLabel) at (-0.65, 3) {Close};
+			%\node[labels,labels side] (ClosemidLabel) at (-0.65, 2) {Close-mid};
+			%\node[labels,labels side] (OpenmidLabel) at (-0.65, 1) {Open-mid};
+			%\node[labels,labels side] (OpenLabel) at (-0.65, 0) {Open};
+		}%
 
 		% Put all the nodes which were created into the output stream
 		\tl_use:N \g_tikzvowel_nodes_tl
