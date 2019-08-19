@@ -1,12 +1,6 @@
 %!TEX TS-program =  latex
 \documentclass{article}
-
-\newcommand{\ignore}[1]{}
-
-\newcommand\bs{\textbackslash}
-\newcommand{\pkg}[1]{\texttt{#1}}
-
-
+%\documentclass{l3doc}
 \usepackage[margin=1.25in]{geometry}
 
 \usepackage[T3,T1]{fontenc}
@@ -24,16 +18,6 @@ FakeBold=0]{Charis SIL}
 
 \usepackage{xcolor}
 \usepackage{tikz-vowel}
-\usetikzlibrary{external}%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Externalize: OPTION 1: save pictures into /figures/ subdirectory
-\tikzexternalize[prefix=figures/]%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Externalize: OPTION 2: save pictures into /figures/ subdirectory
-%\tikzexternalize%
-%\tikzsetexternalprefix{figures/}%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\tikzset{external/force remake}%
 
 \usepackage{vowel}
 \usepackage{pst-vowel}
@@ -48,29 +32,20 @@ FakeBold=0]{Charis SIL}
 \usepackage[small]{titlesec}
 \usepackage{enumitem}
 
-\usepackage[unicode,
-			hidelinks,
-			bookmarksdepth=4,
-			pdfauthor={Christopher Weedall},
-			pdftitle={Package manual (English) for tikz-vowel},
-			pdfsubject={tikz-vowel package},
-			pdfkeywords={tikz-vowel, tikz, vowel, IPA, ipa, language, linguistics, chart, vowel chart},
-			pdfproducer={Latex with hyperref},
-			pdfcreator={miktex, xelatex, makeindex, makeglossaries}]{hyperref}
-% Stop hyperref from complaining about endlines and italics in chapter/section headers
-% by replacing unsupported characters with nothing and removing the font/style change
-% in the hyperlink/reference
-\pdfstringdefDisableCommands{%
-	\def\\{}%
-	\def\textsuperscript#1{<#1>}%
-	\def\textsc#1{<#1>}%
-	\def\texttt#1{<#1>}%
-	\def\textcite#1{<#1>}%
-	\def\posscite#1{<#1>}%
-	\def\charissil{}%
-	\def\newline{~}%
-	\def\gls{}%
-}
+\newcommand{\ignore}[1]{}
+
+\usepackage[hidelinks,bookmarksdepth=4,
+            pdfauthor={Christopher Weedall},
+            pdftitle={Package manual (English) for tikz-vowel},
+            pdfsubject={Ph.D. dissertation},
+            pdfkeywords={tikz-vowel, tikz, vowel, IPA, ipa, language, linguistics, chart, vowel chart},
+            pdfproducer={Latex with hyperref},
+            pdfcreator={miktex, xelatex, makeindex, makeglossaries}]{hyperref}
+
+
+\newcommand\bs{\textbackslash}
+\newcommand{\pkg}[1]{\texttt{#1}}
+
 
 \begin{document}
 
@@ -81,8 +56,7 @@ FakeBold=0]{Charis SIL}
 \large Christopher Weedall\\The Australian National University\\\texttt{chris.weedall@anu.edu.au}
 
 \bigskip
-%March 08, 2017
-\today
+August 18, 2019
 \end{center}
 
 \section{Introduction}
@@ -109,13 +83,13 @@ Lastly, this \pkg{tikz-vowel}, as the name suggests, depends on \pkg{tikz}.  Fro
 \section{Restrictions}
 \label{sec:Restrictions}
 
-Within the \verb|tikz-vowel| environment, any valid \TikZ code is allowed.  However, if you do directly use \TikZ code, be aware that manual inclusion of \TikZ commands is not officially supported by \pkg{tikz-vowel} - so your mileage may vary (YMMV).  (Note: the vowel and diphthong commands provided in the \pkg{tikz-vowel} are essentially wrappers for \TikZ code).
+Within the \verb|tikz-vowel| environment, any valid \TikZ code is allowed.  However, if you do directly use \TikZ code, be aware that manual inclusion of \TikZ commands is not officially supported by \pkg{tikz-vowel} - so your mileage may vary.  (Note: the vowel and diphthong commands provided in the \pkg{tikz-vowel} are essentially wrappers for \TikZ code).
 
-Generally speaking, \textbf{only} the options and commands included within \pkg{tikz-vowel} should be used.  If you are using any other commands, do not be surprised if unexpected problems arise which are not supported by \pkg{tikz-vowel}.
-
-Aside from the vowel and diphthong commands provided in the \pkg{tikz-vowel} package, \TeX and \LaTeX commands are not supported within the \verb|tikz-vowel| environment - with the exception of the vowel or diphthong label (of this \pkg{tikz-vowel} package).  Anything that you include will not be displayed anyway.  I recommend you do not include them, because they could create compilation errors that you are not expecting.
+Aside from the vowel and diphthong commands provided in the \pkg{tikz-vowel} package, \TeX and \LaTeX commands are not supported within the \verb|tikz-vowel| environment - with the exception of the vowel or diphthong label.  Anything that you include will not be displayed anyway.  I recommend you do not include them, because they could create compilation errors that you are not expecting.
 
 Including \TeX and \LaTeX commands for vowel and diphthong labels (e.g. \verb|\textbf| and \verb|\textit|) should work, however, this method is not robustly supported.  If you have problems due to using one or more commands giving errors, best to take them out.  If you think it \textit{should} work, but it does not, contact the \pkg{tikz-vowel} maintainer and see if an update can account for the required command.
+
+Generally speaking, \textbf{only} the options and commands included within \pkg{tikz-vowel} should be used.  If you are using any other commands, do not be surprised if unexpected problems arise which are not supported by \pkg{tikz-vowel}.
 
 
 \section{\TikZ-vowel environment}
@@ -351,6 +325,429 @@ The following diagrams and their code illustrate the different internal lines po
   \begin{tikz-vowel}[triangle,three]\end{tikz-vowel} \\}\end{minipage} &
 \end{tabular}
 \end{center}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\subsection{TEST}
+%\label{sec:TEST}
+
+\subsection{Label options for the \pkg{tikz-vowel} diagram}
+\label{sec:Label options for the tikz-vowel diagram}
+
+\begin{minipage}[t]{\textwidth}
+The following options are allowed in all diagrams:
+
+\begin{itemize}\itemsep0pt
+	\item \texttt{labels} \\\qquad Draws all labels (top and side -- see below).
+	\item \texttt{top labels} \\\qquad Draws top labels (`Front', `Central', `Back').
+	\item \texttt{side labels} \\\qquad Draws side labels (`Close', `Close-mid', `Open-mid', `Open').
+\end{itemize}%
+\end{minipage}%
+
+\bigskip
+%Using \texttt{three}, \texttt{simple}, \texttt{standard} supercede the \texttt{plain} option.  Using the \texttt{three} option automatically supercedes the options \texttt{simple} and \texttt{standard}.
+
+\noindent
+The following diagrams and their code illustrate the labels with the trapezoid shape:
+
+\begin{center}
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[labels]|\\
+    \verb|\end{tikz-vowel}|\\
+    \emph{or}\\
+    \verb|\begin{tikz-vowel}[ipanew,labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[plain,labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[ipanew,labels]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.5cm}
+  \begin{tikz-vowel}[plain,labels]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\bigskip
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[simple,labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[standard,labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[simple,labels]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.5cm}
+  \begin{tikz-vowel}[standard,labels]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\bigskip
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[three,labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} & 
+  \begin{minipage}[t]{6.5cm}
+  {~}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[three,labels]\end{tikz-vowel} \\}\end{minipage} &
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent
+The following diagrams and their code illustrate the labels with the \texttt{rectangle} shape:
+
+\begin{center}
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,|\\
+    \verb|                    plain,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[rectangle,labels]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.5cm}
+  \begin{tikz-vowel}[rectangle,plain,labels]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\bigskip
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,|\\
+    \verb|                    simple,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,|\\
+    \verb|                    standard,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[rectangle,simple,labels]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.5cm}
+  \begin{tikz-vowel}[rectangle,standard,labels]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\bigskip
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[rectangle,|\\
+    \verb|                    three,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} & 
+  \begin{minipage}[t]{6.5cm}
+  {~}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[rectangle,three,labels]\end{tikz-vowel} \\}\end{minipage} &
+\end{tabular}
+\end{center}
+
+\noindent
+The following diagrams and their code illustrate the labels with the \texttt{triangle} shape:
+
+\begin{center}
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,|\\
+    \verb|                    plain,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[triangle,labels]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.5cm}
+  \begin{tikz-vowel}[triangle,plain,labels]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\vskip 18pt
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,|\\
+    \verb|                    simple,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} &
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,|\\
+    \verb|                    standard,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[triangle,simple,labels]\end{tikz-vowel} \\}\end{minipage} &
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.5cm}
+  \begin{tikz-vowel}[triangle,standard,labels]\end{tikz-vowel} \\}\end{minipage}
+\end{tabular}
+
+\vskip 18pt
+
+\begin{tabular}{ll}
+  \begin{minipage}[t]{6.5cm}{\small
+    \verb|\begin{tikz-vowel}[triangle,|\\
+    \verb|                    three,|\\
+    \verb|                    labels]|\\
+    \verb|\end{tikz-vowel}|\\}
+  \end{minipage} & 
+  \begin{minipage}[t]{6.5cm}
+  {~}
+  \end{minipage} \\
+  \begin{minipage}[t]{6.5cm}{
+  \hspace*{-1.75cm}
+  \begin{tikz-vowel}[triangle,three,labels]\end{tikz-vowel} \\}\end{minipage} &
+\end{tabular}
+\end{center}
+
+%%%%%%%%
+
+\bigskip
+
+\noindent
+The following diagrams and their code illustrate the \texttt{top labels} with the trapezoidal shape:
+
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}[ipanew,top labels]
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}[top labels]|
+	\item \verb|\end{tikz-vowel}|
+	\item \textit{or}
+	\item \verb|\begin{tikz-vowel}[ipanew, top labels]|
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+%
+
+\bigskip
+
+\noindent
+The following diagrams and their code illustrate the \texttt{side labels} with the trapezoidal shape:
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}[ipanew,side labels]
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}[side labels]|
+	\item \verb|\end{tikz-vowel}|
+	\item \textit{or}
+	\item \verb|\begin{tikz-vowel}[ipanew, side labels]|
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+%
+
+\bigskip
+
+%\begin{minipage}[t]{\textwidth}%
+\noindent
+The styles (e.g. font, alignment, color, etc.) can be modified with the \texttt{tikzvowel labels}, \texttt{tikzvowel top labels}, and \texttt{tikzvowel side labels} \tikz{} styles.\footnote{Although the keys are very long, I determined that it would be less likely to overlap styles from other packages with \texttt{tikzvowel } prepended.}  Their default styles are defined as:
+
+%\medskip
+\nobreak
+
+\begin{center}
+	\begin{tabular}{lll}
+		\verb|\tikzset| & & \\
+		\verb|{%| & & \\
+		~ & \verb|tikzvowel~labels/.style=| & \verb|{font=\footnotesize,},| \\
+		~ & \verb|tikzvowel~top~labels/.style=| & \verb|{},| \\
+		~ & \verb|tikzvowel~side~labels/.style=| & \verb|{anchor=east,align=right,},| \\
+		\verb|}%| & & \\
+	\end{tabular}
+\end{center}
+%\end{minipage}%
+
+\vskip 18pt
+
+\begin{minipage}[t]{\textwidth}
+\noindent
+The following diagram has \texttt{tikzvowel labels} style modified with \verb|\Large| font size and red color:
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}[ipanew,labels]
+		\tikzset{tikzvowel labels/.append style={font=\Large,color=red}}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}[side labels]|
+		\begin{itemize}[label={}]
+			\item \verb|\tikzset{%|
+			\item \verb|   tikzvowel labels/.append style=|
+			\item \verb|      {font=\Large,color=red}}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+	\item \textit{or}
+	\item \verb|\begin{tikz-vowel}[ipanew, side labels]|
+		\begin{itemize}[label={}]
+			\item \verb|\tikzset{%|
+			\item \verb|   tikzvowel labels/.append style=|
+			\item \verb|      {font=\Large,color=red}}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+%
+\end{minipage}%
+
+\vskip 18pt
+
+\begin{minipage}[t]{\textwidth}%
+\noindent
+The following diagram has \texttt{tikzvowel top labels} style modified with \verb|\Large| font size and red color:
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}[ipanew,labels]
+		\tikzset{tikzvowel top labels/.append style={font=\Large,color=red}}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}[labels]|
+		\begin{itemize}[label={}]
+			\item \verb|\tikzset{%|
+			\item \verb|   tikzvowel top labels/.append style=|
+			\item \verb|      {font=\Large,color=red}}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+	\item \textit{or}
+	\item \verb|\begin{tikz-vowel}[ipanew, labels]|
+		\begin{itemize}[label={}]
+			\item \verb|\tikzset{%|
+			\item \verb|   tikzvowel top labels/.append style=|
+			\item \verb|      {font=\Large,color=red}}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+%
+\end{minipage}%
+
+\vskip 18pt
+
+\begin{minipage}[t]{\textwidth}%
+\noindent
+The following diagram has \verb|tikzvowel side labels| style modified with \verb|\Large| font size and red color:
+\begin{center}
+\begin{tabular}{rl}
+  \begin{minipage}[t]{0.45\textwidth}
+  \centering
+  	{\charissil
+	\begin{tikz-vowel}[ipanew,labels]
+		\tikzset{tikzvowel side labels/.append style={font=\Large,color=red}}
+	\end{tikz-vowel}
+	}
+  \end{minipage} &
+  \begin{minipage}[t]{0.44\textwidth}
+  \vspace{-100pt}
+  {\small
+\begin{itemize}[label={}]
+	\item 
+	\item \verb|\begin{tikz-vowel}[labels]|
+		\begin{itemize}[label={}]
+			\item \verb|\tikzset{%|
+			\item \verb|   tikzvowel side labels/.append style=|
+			\item \verb|      {font=\Large,color=red}}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+	\item \textit{or}
+	\item \verb|\begin{tikz-vowel}[ipanew, labels]|
+		\begin{itemize}[label={}]
+			\item \verb|\tikzset{%|
+			\item \verb|   tikzvowel side labels/.append style=|
+			\item \verb|      {font=\Large,color=red}}|
+		\end{itemize}
+	\item \verb|\end{tikz-vowel}|
+\end{itemize}
+    }
+  \end{minipage}\\
+\end{tabular}
+\end{center}
+%
+\end{minipage}%
 
 \subsection{\TikZ options for the \pkg{tikz-vowel} diagram}
 \label{sec:TikZ options for the tikz-vowel diagram}
@@ -1897,7 +2294,7 @@ I would like to thank Rei Fukui for creating the original \pkg{vowel} and Alan M
 
 It was via discussion with Alan that I realized a transparency issue existed when using \pkg{pstricks} (and, therefore, \pkg{pst-vowel}) when using \XeLaTeX.  That discussion ultimately led me to creating this package.
 
-In addition to the above package authors, I had a great deal of help from numerous people online, either via accessible documents or often from my own or previously posted questions on Stack Exchange.  I would have struggled or possibly never gotten this package completed without such help!
+In addition to the above package authors, I had a great deal of help from numerous people online, either via accessible documents or often from my own or previously posted questions on Stack Exchange.  I would have struggled or possibility never gotten this package completed without such help!
 
 
 
