@@ -52,6 +52,7 @@
 %
 % Version 1.0 2017/03/18
 % Version 1.1 2019/08/18
+% Version 1.2 2020/12/13
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\RequirePackage{expl3}
@@ -59,9 +60,9 @@
 	% Package name
 	{tikz-vowel}
 	% Release date
-	{2018/10/28}
+	{2020/12/13}
 	% Release version          
-	{1.1}
+	{1.2}
 	% Description
 	{tikz-vowel package provides an environment allowing a (stylized) sagittal view for vowel plotting.}
 %
@@ -107,6 +108,12 @@
 %
 % Generate a nVTF variant for \regex_match:nnTF
 \cs_generate_variant:Nn \regex_match:nnTF {nVTF}
+%
+% Generate a xVTF variant for \regex_match:nVTF
+\cs_generate_variant:Nn \regex_match:nVTF {xVTF}
+%
+% Generate a xnNF variant for \regex_replace_once:nnNF
+\cs_generate_variant:Nn \regex_replace_once:nnNF {xnNF}
 %
 % Generate a NT variant for \tl_if_blank:nT
 %\cs_generate_variant:Nn \tl_if_blank:nT {NT}% <---- 'N' is DEPRECATED
@@ -1818,7 +1825,7 @@
 \cs_new:Nn \cs_tikzvowel_set_vowel_label_options:nnn
 {%	
 	% Error checking for \g_tikzvowel_nodes_tl - is empty?
-	\tl_if_empty:NT \g_tikzvowel_nodes_tl
+	\tl_if_empty:nT \g_tikzvowel_nodes_tl
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
 				{No~vowels~exist!}
@@ -1826,7 +1833,7 @@
 		}%
 
 	% Error checking for \g_tikzvowel_nodes_tl - is blank?
-	\tl_if_blank:NT \g_tikzvowel_nodes_tl 
+	\tl_if_blank:nT \g_tikzvowel_nodes_tl 
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
 				{No~vowels~exist!}
@@ -1940,7 +1947,7 @@
 \cs_new:Nn \cs_tikzvowel_set_vowel_node_options:nnn
 {%	
 	% Error checking for \g_tikzvowel_nodes_tl - is empty?
-	\tl_if_empty:NT \g_tikzvowel_nodes_tl
+	\tl_if_empty:nT \g_tikzvowel_nodes_tl
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
 				{No~vowels~exist!}
@@ -1948,7 +1955,7 @@
 		}%
 
 	% Error checking for \g_tikzvowel_nodes_tl - is blank?
-	\tl_if_blank:NT \g_tikzvowel_nodes_tl 
+	\tl_if_blank:nT \g_tikzvowel_nodes_tl 
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nnn}
 				{No~vowels~exist!}
@@ -2371,7 +2378,7 @@
 \cs_new:Nn \cs_tikzvowel_set_diphthong_options:nnnn
 {%	
 	% Error checking for diphthong token list - is empty?
-	\tl_if_empty:NT \g_tikzvowel_draw_tl
+	\tl_if_empty:nT \g_tikzvowel_draw_tl
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nn}
 				{No~diphthongs~exist!}
@@ -2379,7 +2386,7 @@
 		}%
 
 	% Error checking for diphthong token list - is blank?
-	\tl_if_blank:NT \g_tikzvowel_draw_tl 
+	\tl_if_blank:nT \g_tikzvowel_draw_tl 
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_options:nn}
 				{No~diphthongs~exist!}
@@ -2549,7 +2556,7 @@
 \cs_new:Nn \cs_tikzvowel_set_diphthong_label_options:nnn
 {%	
 	% Error checking for diphthong token list - is empty?
-	\tl_if_empty:NT \g_tikzvowel_draw_tl
+	\tl_if_empty:nT \g_tikzvowel_draw_tl
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_label_options:nn}
 				{No~diphthongs~exist!}
@@ -2557,7 +2564,7 @@
 		}%
 
 	% Error checking for diphthong token list - is blank?
-	\tl_if_blank:NT \g_tikzvowel_draw_tl 
+	\tl_if_blank:nT \g_tikzvowel_draw_tl 
 		{%
 			\PackageError{tikz-vowel:cs_tikzvowel_set_diphthong_label_options:nn}
 				{No~diphthongs~exist!}
